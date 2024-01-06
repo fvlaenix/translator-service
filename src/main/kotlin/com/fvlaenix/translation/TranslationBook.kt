@@ -1,19 +1,21 @@
 import io.github.evanrupert.excelkt.workbook
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import java.io.InputStream
 import java.nio.file.Path
+import kotlin.io.path.createDirectories
 import kotlin.io.path.name
 
-class TranslationBook(path: Path, private val sourceColumn: Int, private val targetColumn: Int) {
+class TranslationBook(inputStream: InputStream, private val path: Path, private val sourceColumn: Int, private val targetColumn: Int) {
 
   val translationBook: MutableList<TranslationData>
   val name: String = path.name
 
   init {
-    val workbook = XSSFWorkbook(path.toFile().inputStream())
+    val workbook = XSSFWorkbook(inputStream)
     translationBook = mutableListOf()
     val sheet = workbook.getSheetAt(0)
     val translations = sheet.toList()
-      .mapIndexedNotNull { index, row ->
+      .mapNotNull { row ->
         val cells = row.toList().map { it.stringCellValue }
         when (cells.size) {
           0 -> null
@@ -24,6 +26,8 @@ class TranslationBook(path: Path, private val sourceColumn: Int, private val tar
   }
 
   fun write(parentDirectory: Path) {
+    val writePath = parentDirectory.resolve(this.path)
+    writePath.parent.createDirectories()
     workbook {
       sheet {
         translationBook.forEach { data ->
@@ -34,7 +38,7 @@ class TranslationBook(path: Path, private val sourceColumn: Int, private val tar
           }
         }
       }
-    }.write(parentDirectory.resolve(name).toString())
+    }.write(writePath.toString())
   }
 
   class TranslationData(val data: MutableList<String>, private val sourceColumn: Int, private val targetColumn: Int) {

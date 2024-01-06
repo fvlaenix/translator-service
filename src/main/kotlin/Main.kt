@@ -10,13 +10,13 @@ const val TXT = "input.txt"
 
 suspend fun txtTranslator() {
   val path = Path.of(TXT)
-  val translationTxtService = TranslationTxtService(path)
+  val translationTxtService = TranslationTxtService(path, "gpt-4")
   translationTxtService.translate()
 }
 
 suspend fun gameTranslator() {
   val path = Path.of(EXCEL_PATH)
-  val translationBookService = TranslationBookService(path, 0, 1, "EN", "game_id")
+  val translationBookService = TranslationBookService(path, 0, 1, "EN", "game_id", "gpt-4")
   try {
     translationBookService.translate()
   } catch (e: Exception) {

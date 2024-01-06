@@ -29,6 +29,9 @@ dependencies {
 
     implementation("io.github.evanrupert:excelkt:1.0.2")
 
+    implementation("com.fasterxml.jackson.core:jackson-core:2.16.1")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
+
     testImplementation("junit:junit:4.4")
 }
 

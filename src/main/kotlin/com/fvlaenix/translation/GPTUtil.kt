@@ -10,7 +10,19 @@ import com.aallam.openai.client.OpenAI
 import kotlin.time.Duration.Companion.seconds
 
 object GPTUtil {
-  suspend fun translate(prompt: String, lines: List<String>): List<String> {
+
+  suspend fun translate(prompt: String, model: String, lines: List<String>, attempts: Int): List<String>? {
+    var tries = 0
+    while (tries < attempts) {
+      try {
+        return translate(prompt, model, lines)
+      } catch (ignored: GPTLinesNotMatchException) {}
+      tries--
+    }
+    return null
+  }
+  
+  suspend fun translate(prompt: String, model: String, lines: List<String>): List<String> {
     val emptyLines = mutableSetOf<Int>()
     val filteredLines = lines.filterIndexed { index, s ->
       if (s.isBlank()) {
@@ -35,7 +47,7 @@ object GPTUtil {
       )
 
       val chatCompletionRequest = ChatCompletionRequest(
-        model = ModelId("gpt-4"),
+        model = ModelId(model),
         messages = listOf(systemMessage, translateMessage)
       )
 

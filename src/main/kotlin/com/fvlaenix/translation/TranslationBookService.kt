@@ -1,10 +1,9 @@
+import com.fvlaenix.translation.FilesUtil
 import com.fvlaenix.translation.GPTUtil
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import java.nio.file.Path
-import kotlin.io.path.isDirectory
-import kotlin.io.path.isRegularFile
-import kotlin.io.path.writeLines
+import kotlin.io.path.*
 
 val ICON_FOUND_REGEX = "^\\\\[I|i]\\[\\d+]".toRegex()
 
@@ -17,36 +16,18 @@ class TranslationBookService(
   private val sourceColumn: Int = 0,
   private val targetColumn: Int = 1,
   language: String,
-  gameId: String
+  gameId: String,
+  private val model: String
 ) {
-  val books : List<TranslationBook>
-  val state : ReadState
-  val cache : MutableMap<String, String>
-  val prompt = TranslationBookService::class.java.getResourceAsStream("/prompt_$language.txt")!!.reader().readText()
-  val namesService = NamesService("${gameId}_$language.properties")
-
-  init {
-    books = if (path.isRegularFile()) {
-      state = ReadState.FILE
-      listOf(TranslationBook(path, sourceColumn, targetColumn))
-    } else {
-      if (path.isDirectory()) {
-        state = ReadState.DIRECTORY
-        path.toFile().walkTopDown()
-          .filter { it.extension == "xlsx" }
-          .sortedBy { it.name }
-          .map { TranslationBook(it.toPath(), sourceColumn, targetColumn) }.toList()
-      } else {
-        throw IllegalStateException("Can't find out is this file or directory. Probably file doesn't exists")
-      }
-    }
-    cache = books.flatMap { book ->
-      book.translationBook
-    }
-      .filter { it.translate != null }
-      .associate { it.toTranslate to it.translate!! }
-      .toMutableMap()
-  }
+  private val books : List<TranslationBook> = FilesUtil.getPaths(path, filter = { it.extension == "xlxs" })
+    .map { TranslationBook(path.inputStream(), path.relativize(it), sourceColumn, targetColumn) }
+  private val cache : MutableMap<String, String> = books
+    .flatMap { book -> book.translationBook }
+    .filter { it.translate != null }
+    .associate { it.toTranslate to it.translate!! }
+    .toMutableMap()
+  private val prompt = TranslationBookService::class.java.getResourceAsStream("/prompt_$language.txt")!!.reader().readText()
+  private val namesService = NamesService("${gameId}_$language.properties")
 
   suspend fun translate() = coroutineScope {
     ensureActive()
@@ -185,7 +166,7 @@ class TranslationBookService(
       startResult.resultLine
     }
     val result = try {
-      GPTUtil.translate(prompt, lines)
+      GPTUtil.translate(prompt, model, lines)
     } catch (e: GPTUtil.GPTLinesNotMatchException) {
       null
     }
@@ -224,20 +205,9 @@ class TranslationBookService(
   }
 
   fun write(path: Path) {
-    when (state) {
-      ReadState.FILE -> {
-        books[0].write(path.parent)
-      }
-      ReadState.DIRECTORY -> {
-        books.forEach { book ->
-          book.write(path)
-        }
-      }
+    books.forEach {
+      it.write(path)
     }
-  }
-
-  enum class ReadState {
-    FILE, DIRECTORY
   }
 
   class KeyNotFoundException(val notFoundKey: String) : IllegalStateException("Can't found key for $notFoundKey")

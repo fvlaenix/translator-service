@@ -6,7 +6,8 @@ import kotlin.io.path.appendLines
 import kotlin.io.path.readLines
 
 class TranslationTxtService(
-  path: Path
+  path: Path,
+  private val model: String
 ) {
 
   companion object {
@@ -38,7 +39,7 @@ class TranslationTxtService(
         while (attempts < maxAttempts) {
           attempts++
           result = try {
-            GPTUtil.translate(prompt, batch)
+            GPTUtil.translate(prompt, model, batch)
           } catch (_: GPTUtil.GPTLinesNotMatchException) {
             null
           }

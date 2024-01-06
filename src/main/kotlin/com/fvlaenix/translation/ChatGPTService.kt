@@ -14,7 +14,7 @@ class ChatGPTService(private val model: String): TranslationServiceGrpcKt.Transl
   override suspend fun translation(request: TranslationRequest): TranslationResponse {
     val untranslatedText = request.text
     return translationResponse {
-      this.text = runCatching { GPTUtil.translate(PERSONA_TRANSLATION_REQUEST, untranslatedText.split("\n")).joinToString(separator = "\n") }
+      this.text = runCatching { GPTUtil.translate(PERSONA_TRANSLATION_REQUEST, model, untranslatedText.split("\n")).joinToString(separator = "\n") }
         .getOrElse { "Exception!" }
     }
   }
