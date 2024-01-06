@@ -11,6 +11,15 @@ import kotlin.time.Duration.Companion.seconds
 
 object GPTUtil {
   suspend fun translate(prompt: String, lines: List<String>): List<String> {
+    val emptyLines = mutableSetOf<Int>()
+    val filteredLines = lines.filterIndexed { index, s ->
+      if (s.isBlank()) {
+        emptyLines.add(index)
+        return@filterIndexed false
+      } else {
+        return@filterIndexed true
+      }
+    }
     val result = mutableListOf<String>()
     OpenAI(
       token = TOKEN,
@@ -22,7 +31,7 @@ object GPTUtil {
       )
       val translateMessage = ChatMessage(
         role = ChatRole.User,
-        content = lines.joinToString(separator = "\n")
+        content = filteredLines.joinToString(separator = "\n")
       )
 
       val chatCompletionRequest = ChatCompletionRequest(
@@ -36,7 +45,8 @@ object GPTUtil {
       }
     }
     result.removeAll { it.isBlank() }
-    if (result.size != lines.size) throw GPTLinesNotMatchException(lines.size, result.size)
+    if (result.size != filteredLines.size) throw GPTLinesNotMatchException(lines.size, result.size)
+    emptyLines.sorted().forEach { result.add(it, "") }
     return result
   }
 
