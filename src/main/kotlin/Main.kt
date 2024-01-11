@@ -1,5 +1,7 @@
 import com.fvlaenix.translation.ChatGPTServer
+import com.fvlaenix.translation.TranslationJsonService
 import java.nio.file.Path
+import kotlin.io.path.Path
 
 class Main
 
@@ -26,7 +28,19 @@ suspend fun gameTranslator() {
   }
 }
 
-fun main() {
+suspend fun jsonTranslator() {
+  val path = Path("<text>")
+  val translationJsonService = TranslationJsonService(path,  "gpt-4")
+  try {
+    translationJsonService.translate()
+  } catch (e: Exception) {
+    throw Exception(e)
+  } finally {
+    translationJsonService.write(path)
+  }
+}
+
+fun runServer() {
   val server = ChatGPTServer(
     port = 50052,
     // model = "gpt-3.5-turbo-0613",
@@ -35,4 +49,8 @@ fun main() {
   server.start()
   println("Started")
   server.blockUntilShutdown()
+}
+
+suspend fun main() {
+  jsonTranslator()
 }

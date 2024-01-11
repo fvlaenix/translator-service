@@ -17,7 +17,7 @@ object GPTUtil {
       try {
         return translate(prompt, model, lines)
       } catch (ignored: GPTLinesNotMatchException) {}
-      tries--
+      tries++
     }
     return null
   }
@@ -57,7 +57,9 @@ object GPTUtil {
       }
     }
     result.removeAll { it.isBlank() }
-    if (result.size != filteredLines.size) throw GPTLinesNotMatchException(lines.size, result.size)
+    if (result.size != filteredLines.size) {
+      throw GPTLinesNotMatchException(lines.size, result.size)
+    }
     emptyLines.sorted().forEach { result.add(it, "") }
     return result
   }
