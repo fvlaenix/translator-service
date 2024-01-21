@@ -52,5 +52,5 @@ fun runServer() {
 }
 
 suspend fun main() {
-  jsonTranslator()
+  runServer()
 }
