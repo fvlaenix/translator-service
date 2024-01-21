@@ -42,3 +42,6 @@ bin/
 .DS_Store
 /.idea/
 /src/main/resources/token.txt
+/src/main/resources/*_EN.properties
+/src/main/resources/*_RU.properties
+/src/main/resources/prompt_*.txt

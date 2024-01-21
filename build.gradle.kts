@@ -41,8 +41,14 @@ kotlin {
     jvmToolchain(13)
 }
 
-application {
-    mainClass.set("MainKt")
+task<JavaExec>("runServer") {
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("RunServerKt")
+}
+
+task<JavaExec>("runTxt") {
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("RunTxtKt")
 }
 
 protobuf {
