@@ -1,11 +1,13 @@
-import com.fvlaenix.translation.ChatGPTServer
 import com.fvlaenix.translation.TranslationJsonService
 import java.nio.file.Path
 import kotlin.io.path.Path
 
 class Main
 
-val TOKEN = Main::class.java.getResourceAsStream("/token.txt")!!.bufferedReader().readText().trim()
+val TOKEN =
+  Main::class.java.getResourceAsStream("/token.txt")?.bufferedReader()?.readText()?.trim() ?:
+  System.getenv("openai.token") ?:
+  throw IllegalStateException("Can't retrieve token")
 
 suspend fun gameTranslator(excelPath: String) {
   val path = Path.of(excelPath)

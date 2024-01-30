@@ -21,7 +21,7 @@ dependencies {
     implementation("io.grpc:grpc-protobuf:1.59.0")
     implementation("io.grpc:grpc-stub:1.59.0")
     compileOnly("org.apache.tomcat:annotations-api:6.0.53")
-    protobuf(files("discord-bots-rpc/translator/"))
+    protobuf(files("discord-bots-rpc/translator/gpt-request.proto", "discord-bots-rpc/is-alive.proto"))
 
     implementation(platform("com.aallam.openai:openai-client-bom:3.5.1"))
     implementation("com.aallam.openai:openai-client")

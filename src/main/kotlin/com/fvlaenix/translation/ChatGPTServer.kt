@@ -15,7 +15,7 @@ class ChatGPTServer(port: Int, model: String) {
     )
   }
 
-  fun stop() {
+  private fun stop() {
     server.shutdown()
   }
 
