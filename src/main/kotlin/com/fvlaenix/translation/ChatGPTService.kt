@@ -4,6 +4,10 @@ import com.fvlaenix.translation.protobuf.TranslationRequest
 import com.fvlaenix.translation.protobuf.TranslationResponse
 import com.fvlaenix.translation.protobuf.TranslationServiceGrpcKt
 import com.fvlaenix.translation.protobuf.translationResponse
+import java.util.logging.Level
+import java.util.logging.Logger
+
+private val LOGGER = Logger.getLogger(ChatGPTService::class.java.name)
 
 class ChatGPTService(private val model: String): TranslationServiceGrpcKt.TranslationServiceCoroutineImplBase() {
 
@@ -14,8 +18,15 @@ class ChatGPTService(private val model: String): TranslationServiceGrpcKt.Transl
   override suspend fun translation(request: TranslationRequest): TranslationResponse {
     val untranslatedText = request.text
     return translationResponse {
-      this.text = runCatching { GPTUtil.translate(PERSONA_TRANSLATION_REQUEST, model, untranslatedText.split("\n")).joinToString(separator = "\n") }
-        .getOrElse { "Exception!" }
+      runCatching {
+        this@translationResponse.text = GPTUtil.translate(
+          PERSONA_TRANSLATION_REQUEST, model,
+          untranslatedText.split("\n"), 5)?.joinToString(separator = "\n") ?: throw Exception("Can't translate with such count of attempts")
+      }
+        .getOrElse {
+          LOGGER.log(Level.SEVERE, "Exception while trying to get translation", it)
+          this.error = "Exception while trying to get translation. You can tag the person who ran the bot to see what the problem might be"
+        }
     }
   }
 }
