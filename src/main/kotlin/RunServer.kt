@@ -1,6 +1,7 @@
 import com.fvlaenix.translation.ChatGPTServer
 
 fun main() {
+  TOKEN
   val server = ChatGPTServer(
     port = 50052,
     // model = "gpt-3.5-turbo-0613",
