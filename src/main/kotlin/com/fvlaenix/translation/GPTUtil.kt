@@ -11,6 +11,55 @@ import kotlin.time.Duration.Companion.seconds
 
 object GPTUtil {
 
+  data class TranslationData(
+    val original: String,
+    val translation: String?
+  )
+
+  suspend fun translate(
+    prompt: String,
+    model: String,
+    linesWithTranslation: List<TranslationData>,
+    attempts: Int,
+    grouper: (List<String>) -> List<List<String>>
+  ): List<TranslationData> {
+    val alreadyTranslatedData: MutableMap<Int, TranslationData> = mutableMapOf()
+    val notTranslatedData: MutableList<String> = mutableListOf()
+    linesWithTranslation.forEachIndexed { index, line ->
+      if (line.translation == null) {
+        notTranslatedData.add(line.original)
+      } else {
+        alreadyTranslatedData[index] = line
+      }
+    }
+    val batchedData = grouper(notTranslatedData)
+    var itOnTranslation = 0
+    var itOnLines = 0
+    val result: MutableList<TranslationData> = mutableListOf()
+    while (itOnLines < linesWithTranslation.size) {
+      if (alreadyTranslatedData.containsKey(itOnLines)) {
+        result.add(alreadyTranslatedData[itOnLines]!!)
+        itOnLines++
+      } else {
+        val toTranslateData = batchedData[itOnTranslation]
+        itOnTranslation++
+        val translationData = translate(prompt, model, toTranslateData, attempts)
+        if (translationData != null) {
+          toTranslateData.zip(translationData).forEach { pair ->
+            result.add(TranslationData(pair.first, pair.second))
+            itOnLines++
+          }
+        } else {
+          toTranslateData.forEach { toTranslate ->
+            result.add(TranslationData(toTranslate, null))
+            itOnLines++
+          }
+        }
+      }
+    }
+    return result
+  }
+
   suspend fun translate(prompt: String, model: String, lines: List<String>, attempts: Int): List<String>? {
     var tries = 0
     while (tries < attempts) {

@@ -1,4 +1,5 @@
 import com.fvlaenix.translation.GPTUtil
+import com.fvlaenix.translation.Util
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import java.nio.file.Path
@@ -20,18 +21,7 @@ class TranslationTxtService(
   suspend fun translate() {
     coroutineScope {
       ensureActive()
-      val toTranslateBatches = mutableListOf<List<String>>()
-      var buffer = mutableListOf<String>()
-      for (line in text) {
-        if (buffer.sumOf { it.split("\\s+".toRegex()).count() } + line.split("\\s+".toRegex()).count() > COUNT_WORDS) {
-          toTranslateBatches.add(buffer)
-          buffer = mutableListOf()
-        }
-        buffer.add(line)
-      }
-      if (buffer.isNotEmpty()) {
-        toTranslateBatches.add(buffer)
-      }
+      val toTranslateBatches = Util.splitWords(text, COUNT_WORDS)
       val maxAttempts = 3
       for (batch in toTranslateBatches) {
         var result: List<String>? = null
