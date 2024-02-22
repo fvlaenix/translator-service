@@ -1,4 +1,4 @@
-import java.util.Properties
+package com.fvlaenix.translation
 
 class NamesService(private val properties: Map<String, String>) {
 

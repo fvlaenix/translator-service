@@ -1,3 +1,4 @@
+import com.fvlaenix.translation.NamesService
 import junit.framework.TestCase
 import org.junit.Test
 

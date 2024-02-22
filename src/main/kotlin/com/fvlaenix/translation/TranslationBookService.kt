@@ -1,5 +1,7 @@
 import com.fvlaenix.translation.FilesUtil
 import com.fvlaenix.translation.GPTUtil
+import com.fvlaenix.translation.NamesService
+import com.fvlaenix.translation.TranslationBook
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import java.nio.file.Path

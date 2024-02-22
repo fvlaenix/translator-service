@@ -1,5 +1,5 @@
-import com.fvlaenix.translation.GPTUtil
-import com.fvlaenix.translation.Util
+package com.fvlaenix.translation
+
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import java.nio.file.Path

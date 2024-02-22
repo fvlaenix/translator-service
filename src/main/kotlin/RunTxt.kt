@@ -1,3 +1,4 @@
+import com.fvlaenix.translation.TranslationTxtService
 import java.nio.file.Path
 
 suspend fun main(args: Array<String>) {
