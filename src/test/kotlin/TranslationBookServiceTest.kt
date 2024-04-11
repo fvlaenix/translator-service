@@ -37,4 +37,22 @@ class TranslationBookServiceTest {
     TestCase.assertEquals("имя\n", start.start)
     TestCase.assertEquals("「きゃーっ、姫様ーっ！」 「う、美しい……舞うような剣さばきだ……」", start.resultLine)
   }
+  
+  @Test
+  fun `test bo 10f name`() {
+    val start = TranslationBookService.getStart(CLASSIC_NAMES_SERVICE, "ROSE\n" + 
+      "Abracadabra\nAbracadabra"
+    )
+    TestCase.assertEquals("ROSE\n", start.start)
+    TestCase.assertEquals("Abracadabra Abracadabra", start.resultLine)
+  }
+  
+  @Test
+  fun `test bo 10f with icon`() {
+    val start = TranslationBookService.getStart(CLASSIC_NAMES_SERVICE, "ROSE\n" +
+            "\\I[203]Abracadabra\nAbracadabra"
+    )
+    TestCase.assertEquals("ROSE\n\\I[203]", start.start)
+    TestCase.assertEquals("Abracadabra Abracadabra", start.resultLine)
+  }
 }

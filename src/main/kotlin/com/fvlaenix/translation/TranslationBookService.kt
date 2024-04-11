@@ -7,11 +7,12 @@ import kotlinx.coroutines.ensureActive
 import java.nio.file.Path
 import kotlin.io.path.*
 
-val ICON_FOUND_REGEX = "^\\\\[I|i]\\[\\d+]".toRegex()
+val ICON_FOUND_REGEX = "^\\\\[I|i]\\[\\d+]\\s*".toRegex()
 
 const val MAX_COUNT_LINES = 10
 
 val NAMES_BO_REGEX = "\\\\n<([^>]+)>".toRegex()
+val NAMES_BO_ANOTHER_REGEX = "^[A-Z]{3,}\\s*".toRegex()
 
 class TranslationBookService(
   path: Path,
@@ -21,8 +22,8 @@ class TranslationBookService(
   gameId: String,
   private val model: String
 ) {
-  private val books : List<TranslationBook> = FilesUtil.getPaths(path, filter = { it.extension == "xlxs" })
-    .map { TranslationBook(path.inputStream(), path.relativize(it), sourceColumn, targetColumn) }
+  private val books : List<TranslationBook> = FilesUtil.getPaths(path, filter = { it.extension == "xlxs" || it.extension == "xlsx" })
+    .map { TranslationBook(it.inputStream(), path.relativize(it), sourceColumn, targetColumn) }
   private val cache : MutableMap<String, String> = books
     .flatMap { book -> book.translationBook }
     .filter { it.translate != null }
@@ -99,14 +100,6 @@ class TranslationBookService(
           continue
         }
 
-        // line separator found
-        if (resultLine.contains("[\r\n]".toRegex())) {
-          resultLine = resultLine.replace("\r", "")
-          resultLine = resultLine.replace("\n", " ")
-          isChanged = true
-          continue
-        }
-
         // name Bo found
         val nameFounder = NAMES_BO_REGEX.find(resultLine)
         if (nameFounder != null) {
@@ -119,6 +112,17 @@ class TranslationBookService(
           }
           resultLine =
             "\"" + resultLine.substring(0, nameFounder.range.first) + resultLine.substring(nameFounder.range.last + 1) + "\""
+          isChanged = true
+          continue
+        }
+        
+        // name Bo another found
+        val nameHighFounder = NAMES_BO_ANOTHER_REGEX.find(resultLine)
+        if (nameHighFounder != null) {
+          val group = nameHighFounder.groups[0]!!
+          resultStart = (resultStart ?: "") + group.value
+          resultLine =
+            resultLine.substring(0, nameHighFounder.range.first) + resultLine.substring(nameHighFounder.range.last + 1)
           isChanged = true
           continue
         }
@@ -135,7 +139,12 @@ class TranslationBookService(
         }
       }
 
-      return StartResult(resultLine, resultStart)
+      if (resultLine.contains("[\r\n]".toRegex())) {
+        resultLine = resultLine.replace("\r", "")
+        resultLine = resultLine.replace("\n", " ")
+      }
+      
+      return StartResult(resultLine.trim(), resultStart)
     }
   }
 
@@ -187,7 +196,7 @@ class TranslationBookService(
     }
   }
 
-  fun checkNames() {
+  private fun checkNames() {
     val notFoundKeys = mutableListOf<String>()
     books.forEachIndexed books@{ _, book ->
       book.translationBook.forEachIndexed data@{ dataIndex, data ->
