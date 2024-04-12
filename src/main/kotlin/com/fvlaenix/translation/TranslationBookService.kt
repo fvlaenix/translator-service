@@ -16,7 +16,9 @@ class TranslationBookService(
   private val targetColumn: Int = 1,
   language: String,
   gameId: String,
-  private val model: String
+  private val model: String,
+  private val namesService: NamesService = NamesService("${gameId}_$language.properties"),
+  private val dialogProvider: ProvidersCollection = ProvidersCollection.defaultProvidersCollection(namesService)
 ) {
   private val books : List<TranslationBook> = FilesUtil.getPaths(path, filter = { it.extension == "xlxs" || it.extension == "xlsx" })
     .map { TranslationBook(it.inputStream(), path.relativize(it), sourceColumn, targetColumn) }
@@ -26,8 +28,6 @@ class TranslationBookService(
     .associate { it.toTranslate to it.translate!! }
     .toMutableMap()
   private val prompt = TranslationBookService::class.java.getResourceAsStream("/prompt_$language.txt")!!.reader().readText()
-  private val namesService = NamesService("${gameId}_$language.properties")
-  private val dialogProvider = ProvidersCollection.defaultProvidersCollection(namesService)
 
   suspend fun translate() = coroutineScope {
     ensureActive()
@@ -108,7 +108,7 @@ class TranslationBookService(
           resultLine = resultLine.substring(1, resultLine.length - 1).trim()
         }
         if (linesTalk.containsKey(index)) {
-          resultLine = "${linesTalk[index]!!}${pair.second}"
+          resultLine = dialogProvider.restore(resultLine, linesTalk[index]!!)
         }
         cache[pair.first.second.toTranslate] = resultLine
         pair.first.second.translate = resultLine
