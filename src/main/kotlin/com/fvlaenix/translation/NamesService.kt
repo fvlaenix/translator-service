@@ -9,7 +9,7 @@ class NamesService(private val properties: Map<String, String>) {
     }
   )
 
-  operator fun get(name: String): String? {
-    return properties[name]
+  operator fun get(name: String): String {
+    return properties[name] ?: throw TranslationBookService.KeyNotFoundException(name)
   }
 }

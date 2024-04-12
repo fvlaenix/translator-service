@@ -15,7 +15,7 @@ class ElmiaDialogProvider(private val namesService: NamesService) : SystemDialog
     val positionOfSplit = s.indexOfFirst { it == '\n' }
     if (positionOfSplit + 1 == positionOfOpen && positionOfSplit != -1) {
       val name = s.split("\n")[0]
-      val replacement = namesService[name] ?: throw TranslationBookService.KeyNotFoundException(name)
+      val replacement = namesService[name]
       val isLastSymbolQuot = s.indexOfLast { it == '」' } == s.length - 1
       return SystemDialogProvider.SystemDialogProviderResult(
         ElmiaDialog(replacement),
