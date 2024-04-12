@@ -2,17 +2,13 @@ import com.fvlaenix.translation.FilesUtil
 import com.fvlaenix.translation.GPTUtil
 import com.fvlaenix.translation.NamesService
 import com.fvlaenix.translation.TranslationBook
+import com.fvlaenix.translation.systemdialog.ProvidersCollection
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import java.nio.file.Path
 import kotlin.io.path.*
 
-val ICON_FOUND_REGEX = "^\\\\[I|i]\\[\\d+]\\s*".toRegex()
-
 const val MAX_COUNT_LINES = 10
-
-val NAMES_BO_REGEX = "\\\\n<([^>]+)>".toRegex()
-val NAMES_BO_ANOTHER_REGEX = "^[A-Z]{3,}\\s*".toRegex()
 
 class TranslationBookService(
   path: Path,
@@ -31,6 +27,7 @@ class TranslationBookService(
     .toMutableMap()
   private val prompt = TranslationBookService::class.java.getResourceAsStream("/prompt_$language.txt")!!.reader().readText()
   private val namesService = NamesService("${gameId}_$language.properties")
+  private val dialogProvider = ProvidersCollection.defaultProvidersCollection(namesService)
 
   suspend fun translate() = coroutineScope {
     ensureActive()
@@ -73,83 +70,8 @@ class TranslationBookService(
     return currentLine
   }
 
-  companion object {
-    data class StartResult(val resultLine: String, val start: String?)
-
-    fun getStart(namesService: NamesService, line: String): StartResult {
-      var resultStart: String? = null
-      var resultLine = line
-      var isChanged = true
-      while (isChanged) {
-        isChanged = false
-
-        // name Elmia found
-        val positionOfOpen = resultLine.indexOfFirst { it == '「' }
-        val positionOfSplit = resultLine.indexOfFirst { it == '\n' }
-        if (positionOfSplit + 1 == positionOfOpen && positionOfSplit != -1) {
-          val name = resultLine.split("\n")[0]
-          val replacement = namesService[name]
-          if (replacement == null) {
-            throw KeyNotFoundException(name)
-          } else {
-            resultStart = (resultStart ?: "") + "$replacement\n"
-          }
-          val isLastSymbolQuot = resultLine.indexOfLast { it == '」' } == resultLine.length - 1
-          resultLine = "「" + resultLine.substring(positionOfOpen + 1, resultLine.length - if (isLastSymbolQuot) 1 else 0) + "」"
-          isChanged = true
-          continue
-        }
-
-        // name Bo found
-        val nameFounder = NAMES_BO_REGEX.find(resultLine)
-        if (nameFounder != null) {
-          val group = nameFounder.groups[1]!!
-          val replacement = namesService[group.value]
-          if (replacement == null) {
-            throw KeyNotFoundException(group.value)
-          } else {
-            resultStart = (resultStart ?: "") + "\\n<${replacement}>"
-          }
-          resultLine =
-            "\"" + resultLine.substring(0, nameFounder.range.first) + resultLine.substring(nameFounder.range.last + 1) + "\""
-          isChanged = true
-          continue
-        }
-        
-        // name Bo another found
-        val nameHighFounder = NAMES_BO_ANOTHER_REGEX.find(resultLine)
-        if (nameHighFounder != null) {
-          val group = nameHighFounder.groups[0]!!
-          resultStart = (resultStart ?: "") + group.value
-          resultLine =
-            resultLine.substring(0, nameHighFounder.range.first) + resultLine.substring(nameHighFounder.range.last + 1)
-          isChanged = true
-          continue
-        }
-
-        // icon found
-        val iconFounder = ICON_FOUND_REGEX.find(resultLine)
-        if (iconFounder != null) {
-          val group = iconFounder.groups[0]!!
-          resultStart = (resultStart ?: "") + group.value
-          resultLine =
-            resultLine.substring(0, iconFounder.range.first) + resultLine.substring(iconFounder.range.last + 1)
-          isChanged = true
-          continue
-        }
-      }
-
-      if (resultLine.contains("[\r\n]".toRegex())) {
-        resultLine = resultLine.replace("\r", "")
-        resultLine = resultLine.replace("\n", " ")
-      }
-      
-      return StartResult(resultLine.trim(), resultStart)
-    }
-  }
-
   suspend fun translateSubbook(book: TranslationBook, startLine: Int, endLine: Int) {
-    val linesTalk = mutableMapOf<Int, String>()
+    val linesTalk = mutableMapOf<Int, ProvidersCollection.ProvidersResult>()
     val linesWithTranslation = book.translationBook.subList(startLine, endLine)
       .mapIndexed { index, translationData -> Pair(index, translationData) }
       .filter {
@@ -164,17 +86,15 @@ class TranslationBookService(
         }
       }
     if (linesWithTranslation.isEmpty()) return
-    val lines = linesWithTranslation.mapIndexed { index, untranslated ->
+    val lines: List<String> = linesWithTranslation.mapIndexed { index, untranslated ->
       val line = untranslated.second.toTranslate
       val startResult = try {
-        getStart(namesService, line)
+        dialogProvider.get(line)
       } catch (e: Exception) {
         throw Exception("Exception while ${startLine + untranslated.first + 1} line", e)
       }
-      if (startResult.start != null) {
-        linesTalk[index] = startResult.start
-      }
-      startResult.resultLine
+      linesTalk[index] = startResult
+      startResult.result
     }
     val result = try {
       GPTUtil.translate(prompt, model, lines)
@@ -202,7 +122,7 @@ class TranslationBookService(
       book.translationBook.forEachIndexed data@{ dataIndex, data ->
         if (data.translate != null) return@data
         try {
-          getStart(namesService, data.toTranslate)
+          dialogProvider.get(data.toTranslate)
         } catch (e: KeyNotFoundException) {
           notFoundKeys.add("${book.name}|${dataIndex + 1}")
           notFoundKeys.add(e.notFoundKey)
