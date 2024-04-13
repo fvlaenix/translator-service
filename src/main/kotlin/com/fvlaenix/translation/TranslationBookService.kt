@@ -34,7 +34,7 @@ class TranslationBookService(
     checkNames()
     val countBooks = 0
     books.forEachIndexed { index, book ->
-      println("Translate book ${book.name}")
+      println("Translate book ${book.path}")
       try {
         translateBook(book)
       } catch (e: Exception) {

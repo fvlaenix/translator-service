@@ -7,7 +7,7 @@ import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.name
 
-class TranslationBook(inputStream: InputStream, private val path: Path, private val sourceColumn: Int, private val targetColumn: Int) {
+class TranslationBook(inputStream: InputStream, val path: Path, private val sourceColumn: Int, private val targetColumn: Int) {
 
   val translationBook: MutableList<TranslationData>
   val name: String = path.name
