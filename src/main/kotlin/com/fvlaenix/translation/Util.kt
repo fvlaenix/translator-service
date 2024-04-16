@@ -16,4 +16,21 @@ object Util {
     }
     return toTranslateBatches
   }
+  
+  fun splitSymbols(line: String, countSymbolsLimit: Int): List<String> {
+    val result = mutableListOf<String>()
+    val accumulator = mutableListOf<String>()
+    val splitted = line.split("\\s+".toRegex())
+    for (word in splitted) {
+      if (accumulator.sumOf { it.length } + word.length + accumulator.size > countSymbolsLimit) {
+        result.add(accumulator.joinToString(" "))
+        accumulator.clear()
+      }
+      accumulator.add(word)
+    }
+    if (accumulator.isNotEmpty()) {
+      result.add(accumulator.joinToString(" "))
+    }
+    return result
+  }
 }
