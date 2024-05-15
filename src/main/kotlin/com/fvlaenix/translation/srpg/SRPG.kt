@@ -148,26 +148,35 @@ class SRPG(
         var lines = block.split("\r\n")
         if (lines.isEmpty() || (lines.size == 1 && lines[0].isBlank())) return@forEachIndexed
         if (lines[0].startsWith("<") && lines[0].endsWith(">")) lines = lines.drop(1)
-        if (SIDES.none { lines[0].endsWith(":$it") || lines[0].endsWith("：$it") }) throw IllegalStateException("Line $index doesn't have side thing in $path")
-        lines = lines.drop(1)
-        var accumulator: String? = null
-        var countLines = 0
-        lines.forEach { line ->
-          accumulator = (accumulator?.let { "$accumulator " } ?: "") + line
-          countLines++
-          while (accumulator!!.endsWith("*")) {
-            accumulator = accumulator!!.substring(0, accumulator!!.length - 1)
+        val ends = SIDES.filter { lines[0].endsWith(":$it") || lines[0].endsWith("：$it") }
+        if (ends.isEmpty()) throw IllegalStateException("Line $index doesn't have side thing in $path")
+        val end = ends.single()
+        val author = lines[0].substringBeforeLast(end).let { it.substring(0, it.length - 1) }
+        
+        if (author == "Choice") {
+          lines = lines.drop(1)
+          lines.forEach { toTranslate.add(Pair(it, translationMap[it])) }
+        } else {
+          lines = lines.drop(1)
+          var accumulator: String? = null
+          var countLines = 0
+          lines.forEach { line ->
+            accumulator = (accumulator?.let { "$accumulator " } ?: "") + line
             countLines++
+            while (accumulator!!.endsWith("*")) {
+              accumulator = accumulator!!.substring(0, accumulator!!.length - 1)
+              countLines++
+            }
+            if (countLines > 3) throw IllegalStateException("Count of lines more than 3")
+            if (countLines == 3) {
+              toTranslate.add(Pair(accumulator!!, translationMap[accumulator!!]))
+              accumulator = null
+              countLines = 0
+            }
           }
-          if (countLines > 3) throw IllegalStateException("Count of lines more than 3")
-          if (countLines == 3) {
+          if (accumulator != null) {
             toTranslate.add(Pair(accumulator!!, translationMap[accumulator!!]))
-            accumulator = null
-            countLines = 0
           }
-        }
-        if (accumulator != null) {
-          toTranslate.add(Pair(accumulator!!, translationMap[accumulator!!]))
         }
       }
       saveTranslationMap(output, toTranslate)
@@ -197,39 +206,51 @@ class SRPG(
           }
           if (SIDES.none { lines[iter].endsWith(":$it") || lines[iter].endsWith("：$it") }) throw IllegalStateException("Line $index doesn't have side thing")
           val blockBoxName = lines[iter].split("[:：]".toRegex())[0]
-          val translatedBlockBoxName: String = namesService[blockBoxName]
-          translatedLines.add(lines[iter].replace(blockBoxName, translatedBlockBoxName))
-          iter++
-          var accumulator: String? = null
-          var countLines = 0
-          
-          fun addAccumulator(withStars: Boolean) {
-            val translate = translationMap[accumulator!!.trim()] ?: throw IllegalStateException("Can't find translation for $accumulator")
-            val words = Util.splitSymbols(translate, COUNT_SYMBOLS_IN_LINE)
-            if (words.size > 3) throw IllegalStateException("Can't make it in 3 lines")
-            translatedLines.add(words.joinToString(separator = "\r\n") + if (withStars) "*".repeat(3 - words.size) else "")
-            accumulator = null
-            countLines = 0
-          }
-          
-          while (iter < lines.size) {
-            val line = lines[iter]
-            accumulator = (accumulator?.let { "$accumulator " } ?: "") + line
-            countLines++
-            while (accumulator!!.endsWith("*")) {
-              accumulator = accumulator!!.substring(0, accumulator!!.length - 1)
-              countLines++
-            }
-            if (countLines > 3) throw IllegalStateException("Count of lines more than 3")
-            if (countLines == 3) {
-              addAccumulator(true)
-            }
+          if (blockBoxName == "Choice") {
+            translatedLines.add(lines[iter])
             iter++
+            while (iter < lines.size) {
+              val translation = translationMap[lines[iter]] ?: throw IllegalStateException("Can't find translation for ${lines[iter]}")
+              translatedLines.add(translation)
+              iter++
+            }
+            translatedLines.joinToString(separator = "\r\n")
+          } else {
+            val translatedBlockBoxName: String = namesService[blockBoxName]
+            translatedLines.add(lines[iter].replace(blockBoxName, translatedBlockBoxName))
+            iter++
+            var accumulator: String? = null
+            var countLines = 0
+
+            fun addAccumulator(withStars: Boolean) {
+              val translate = translationMap[accumulator!!.trim()]
+                ?: throw IllegalStateException("Can't find translation for $accumulator")
+              val words = Util.splitSymbols(translate, COUNT_SYMBOLS_IN_LINE)
+              if (words.size > 3) throw IllegalStateException("Can't make it in 3 lines")
+              translatedLines.add(words.joinToString(separator = "\r\n") + if (withStars) "*".repeat(3 - words.size) else "")
+              accumulator = null
+              countLines = 0
+            }
+
+            while (iter < lines.size) {
+              val line = lines[iter]
+              accumulator = (accumulator?.let { "$accumulator " } ?: "") + line
+              countLines++
+              while (accumulator!!.endsWith("*")) {
+                accumulator = accumulator!!.substring(0, accumulator!!.length - 1)
+                countLines++
+              }
+              if (countLines > 3) throw IllegalStateException("Count of lines more than 3")
+              if (countLines == 3) {
+                addAccumulator(true)
+              }
+              iter++
+            }
+            if (accumulator != null) {
+              addAccumulator(false)
+            }
+            translatedLines.joinToString(separator = "\r\n")
           }
-          if (accumulator != null) {
-            addAccumulator(false)
-          }
-          translatedLines.joinToString(separator = "\r\n")
         } catch (e: Exception) {
           throw Exception("Exception while patch block $index from file $path", e)
         }
