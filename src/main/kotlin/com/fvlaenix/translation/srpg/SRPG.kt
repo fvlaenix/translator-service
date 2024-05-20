@@ -44,14 +44,25 @@ class SRPG(
   }
   
   abstract class TextFile(path: Path): File(path) {
-    fun saveTranslationMap(output: Path, list: List<Pair<String, String?>>) {
+    val prefix: MutableList<List<String>> = mutableListOf()
+    
+    fun saveTranslationMap(output: Path, list: List<List<String?>>) {
       workbook { 
-        sheet { 
-          list.filter { it.first.isNotEmpty() }.forEach { phrase ->
+        sheet {
+          prefix.forEach { prefixRow ->
             row {
-              cell(phrase.first)
-              if (phrase.second != null) cell(phrase.second!!)
-              else println("Warning")
+              prefixRow.forEach { prefixCell ->
+                cell(prefixCell)
+              }
+            }
+          }
+          list.forEach { row ->
+            if (!row.all { it.isNullOrBlank() }) {
+              row {
+                row.forEach { cell ->
+                  if (cell == null) cell("") else cell(cell)
+                }
+              }
             }
           }
         }
@@ -66,12 +77,18 @@ class SRPG(
       }
       val workbook = XSSFWorkbook(xlsxPath.inputStream())
       val sheet = workbook.getSheetAt(0)
+      val firstRow = sheet.getRow(0)
+      val saver: (List<String>) -> Unit = if (firstRow != null && firstRow.getCell(0).stringCellValue.startsWith("fvlaenix-magic-words")) {
+        { translationMap[it[0].trim()] = it[2].trim() }
+      } else {
+        { translationMap[it[0].trim()] = it[1].trim() }
+      }
       sheet.toList().forEachIndexed { indexRow, row ->
         val cells = row.toList().map { it.stringCellValue }
         when (cells.size) {
           0 -> Unit
-          1 -> println("Not translated line ${indexRow + 1} in $path")
-          2 -> translationMap[cells[0].trim()] = cells[1].trim()
+          1 -> Unit
+          2, 3 -> saver(cells)
           else -> throw IllegalStateException("Cells too much in line ${indexRow + 1} in $path")
         }
       }
@@ -94,7 +111,7 @@ class SRPG(
         jsonNode["victories"]?.let { node -> (node as ArrayNode).forEach { toTranslate.add(Pair(it.asText(), translationMap[it.asText()])) } }
         jsonNode["defeats"]?.let { node -> (node as ArrayNode).forEach { toTranslate.add(Pair(it.asText(), translationMap[it.asText()])) } }
       }
-      saveTranslationMap(output, toTranslate)
+      saveTranslationMap(output, toTranslate.map { listOf(it.first, it.second) })
     }
 
     override fun patchFromTranslationTables(namesService: NamesService, tables: Path, output: Path) {
@@ -139,11 +156,17 @@ class SRPG(
       private val SYSTEM_DIALOG_REGEX = "<\\(\\d+\\)([\\p{script=Han}\\w]+)@\\d+>".toRegex()
     }
     
+    private class EventTextRow(val name: String, val toTranslate: String, val translated: String?) {
+      fun toList(): List<String?> = listOf(name, toTranslate, translated)
+    }
+    
     override fun createTranslationTables(output: Path) {
+      prefix.add(listOf("fvlaenix-magic-words", "SRPG", "SRPG"))
+      prefix.add(listOf("toTranslate", "name", "translated"))
       val translationMap = getTranslationMap(output)
       val fullText = path.readText()
-      val texts = fullText.split("\r\n\r\n")
-      val toTranslate = mutableListOf<Pair<String, String?>>()
+      val texts = fullText.split("\r\n\r\n").map { it.trim() }
+      val toTranslate = mutableListOf<EventTextRow>()
       texts.forEachIndexed { index, block ->
         var lines = block.split("\r\n")
         if (lines.isEmpty() || (lines.size == 1 && lines[0].isBlank())) return@forEachIndexed
@@ -155,7 +178,7 @@ class SRPG(
         
         if (author == "Choice") {
           lines = lines.drop(1)
-          lines.forEach { toTranslate.add(Pair(it, translationMap[it])) }
+          lines.forEach { toTranslate.add(EventTextRow(it, author, translationMap[it])) }
         } else {
           lines = lines.drop(1)
           var accumulator: String? = null
@@ -167,25 +190,24 @@ class SRPG(
               accumulator = accumulator!!.substring(0, accumulator!!.length - 1)
               countLines++
             }
-            if (countLines > 3) throw IllegalStateException("Count of lines more than 3")
-            if (countLines == 3) {
-              toTranslate.add(Pair(accumulator!!, translationMap[accumulator!!]))
+            if (countLines >= 3) {
+              toTranslate.add(EventTextRow(accumulator!!, author, translationMap[accumulator!!]))
               accumulator = null
               countLines = 0
             }
           }
           if (accumulator != null) {
-            toTranslate.add(Pair(accumulator!!, translationMap[accumulator!!]))
+            toTranslate.add(EventTextRow(accumulator!!, author, translationMap[accumulator!!]))
           }
         }
       }
-      saveTranslationMap(output, toTranslate)
+      saveTranslationMap(output, toTranslate.map { it.toList() })
     }
 
     override fun patchFromTranslationTables(namesService: NamesService, tables: Path, output: Path) {
       val translationMap = getTranslationMap(tables)
       val fullText = path.readText()
-      val texts = fullText.split("\r\n\r\n")
+      val texts = fullText.split("\r\n\r\n").map { it.trim() }
       val translatedTexts = texts.mapIndexed { index, block -> 
         try {
           val translatedLines = mutableListOf<String>()
@@ -225,8 +247,11 @@ class SRPG(
             fun addAccumulator(withStars: Boolean) {
               val translate = translationMap[accumulator!!.trim()]
                 ?: throw IllegalStateException("Can't find translation for $accumulator")
-              val words = Util.splitSymbols(translate, COUNT_SYMBOLS_IN_LINE)
-              if (words.size > 3) throw IllegalStateException("Can't make it in 3 lines")
+              var words = Util.splitSymbols(translate, COUNT_SYMBOLS_IN_LINE)
+              if (words.size > 3) {
+                while (words.size > 3 && words.last().isBlank()) words = words.dropLast(1)
+                if (words.size > 3) throw IllegalStateException("Can't make phrase in 3 lines: $translate")
+              }
               translatedLines.add(words.joinToString(separator = "\r\n") + if (withStars) "*".repeat(3 - words.size) else "")
               accumulator = null
               countLines = 0
@@ -240,8 +265,7 @@ class SRPG(
                 accumulator = accumulator!!.substring(0, accumulator!!.length - 1)
                 countLines++
               }
-              if (countLines > 3) throw IllegalStateException("Count of lines more than 3")
-              if (countLines == 3) {
+              if (countLines >= 3) {
                 addAccumulator(true)
               }
               iter++
@@ -369,7 +393,7 @@ class SRPG(
         eventText("recollection.txt")
         eventText("rest.txt")
         eventText("story_character.txt")
-        eventText("story_word.txt")
+        copyPasteFile("story_word.txt") // TODO
         eventText("unitevent.txt")
       }
       folder("Extra") {
