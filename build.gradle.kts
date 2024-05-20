@@ -3,6 +3,7 @@ import com.google.protobuf.gradle.id
 plugins {
     kotlin("jvm") version "1.9.0"
     id("com.google.protobuf") version "0.9.4"
+    kotlin("plugin.serialization") version "1.9.24"
     application
 }
 
@@ -37,6 +38,8 @@ dependencies {
     implementation("org.slf4j:slf4j-api:2.0.9")
     implementation("org.slf4j:slf4j-simple:2.0.9")
 
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    
     testImplementation("junit:junit:4.4")
 }
 

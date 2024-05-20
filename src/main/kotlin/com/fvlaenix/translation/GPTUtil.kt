@@ -7,8 +7,10 @@ import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.http.Timeout
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
+import com.fvlaenix.translation.gpt.GPT
 import kotlin.time.Duration.Companion.seconds
 
+@Deprecated(message = "Use GPT for this now")
 object GPTUtil {
 
   data class TranslationData(
@@ -71,7 +73,21 @@ object GPTUtil {
     return null
   }
   
+  suspend fun translateNew(prompt: String, model: String, lines: List<GPT.TextTranslation>): List<GPT.TextTranslation> {
+    val toTranslateWithoutFilter = lines.map { GPT.TextTranslation(it.original, it.translation) }
+    val toTranslate = toTranslateWithoutFilter.filter { it.translation == null }
+    if (toTranslate.isNotEmpty()) {
+      val response = translate(prompt, model, toTranslate.map { it.original })
+      if (response.size != toTranslate.size) throw GPT.IncorrectTranslation()
+      toTranslate.zip(response).forEach { (translation1, translation2) ->
+        translation1.translation = translation2
+      }
+    }
+    return toTranslateWithoutFilter
+  }
+  
   suspend fun translate(prompt: String, model: String, lines: List<String>): List<String> {
+    check(model == "gpt-4" || model == "gpt-4-turbo") { "Can't use old API with anything except gpt-4. Found: $model" }
     val emptyLines = mutableSetOf<Int>()
     val filteredLines = lines.filterIndexed { index, s ->
       if (s.isBlank()) {
