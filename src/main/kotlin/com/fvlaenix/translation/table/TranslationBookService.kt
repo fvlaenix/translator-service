@@ -1,34 +1,30 @@
+package com.fvlaenix.translation.table
+
 import com.fvlaenix.translation.FilesUtil
 import com.fvlaenix.translation.GPTUtil
 import com.fvlaenix.translation.NamesService
-import com.fvlaenix.translation.TranslationBook
+import com.fvlaenix.translation.gpt.GPT
 import com.fvlaenix.translation.systemdialog.ProvidersCollection
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import java.nio.file.Path
 import kotlin.io.path.*
 
-const val MAX_COUNT_LINES = 10
-
 class TranslationBookService(
   path: Path,
-  private val sourceColumn: Int = 0,
-  private val targetColumn: Int = 1,
   language: String,
   gameId: String,
-  private val model: String,
   private val namesService: NamesService = NamesService("${gameId}_$language.properties"),
   private val dialogProvider: ProvidersCollection = ProvidersCollection.defaultProvidersCollection(namesService)
 ) {
   private val books : List<TranslationBook> = FilesUtil.getPaths(path, filter = { it.extension == "xlxs" || it.extension == "xlsx" })
-    .map { TranslationBook(it.inputStream(), path.relativize(it), sourceColumn, targetColumn) }
+    .map { TranslationBook(it.inputStream(), path.relativize(it)) }
   private val cache : MutableMap<String, String> = books
     .flatMap { book -> book.translationBook }
     .filter { it.translate != null }
     .associate { it.toTranslate to it.translate!! }
     .toMutableMap()
-  private val prompt = TranslationBookService::class.java.getResourceAsStream("/prompt_$language.txt")!!.reader().readText()
-
+  
   suspend fun translate() = coroutineScope {
     ensureActive()
     checkNames()
@@ -74,36 +70,34 @@ class TranslationBookService(
     val linesTalk = mutableMapOf<Int, ProvidersCollection.ProvidersResult>()
     val linesWithTranslation = book.translationBook.subList(startLine, endLine)
       .mapIndexed { index, translationData -> Pair(index, translationData) }
-      .filter {
-        if (it.second.translate != null) false
-        else {
-          if (cache.containsKey(it.second.toTranslate)) {
-            it.second.translate = cache[it.second.toTranslate]
-            false
-          } else {
-            true
-          }
-        }
+    linesWithTranslation.forEach {
+      if (it.second.translate != null) return@forEach
+      if (cache.containsKey(it.second.toTranslate)) {
+        it.second.translate = cache[it.second.toTranslate]
       }
+    }
     if (linesWithTranslation.isEmpty()) return
-    val lines: List<String> = linesWithTranslation.mapIndexed { index, untranslated ->
-      val line = untranslated.second.toTranslate
+    val lines: List<GPT.Translation> = linesWithTranslation.mapIndexed { index, (number, translateData) ->
+      val line = translateData.toTranslate
       val startResult = try {
         dialogProvider.get(line)
       } catch (e: Exception) {
-        throw Exception("Exception while ${startLine + untranslated.first + 1} line", e)
+        throw Exception("Exception while ${startLine + number + 1} line", e)
       }
       linesTalk[index] = startResult
-      startResult.result
+      when (translateData) {
+        is TranslationData.TranslationSimpleData -> GPT.TextTranslation(line, translateData.translate)
+        is TranslationData.TranslationDataWithNameData -> GPT.DialogTranslation(translateData.name, line, translateData.translate)
+      }
     }
     val result = try {
-      GPTUtil.translate(prompt, model, lines)
+      GPT.standardRequest(lines)
     } catch (e: GPTUtil.GPTLinesNotMatchException) {
       null
     }
     if (result != null) {
       linesWithTranslation.zip(result).forEachIndexed { index, pair ->
-        var resultLine = pair.second
+        var resultLine = pair.second.translation!!
         if (resultLine.startsWith("\"") && resultLine.endsWith("\"")) {
           resultLine = resultLine.substring(1, resultLine.length - 1).trim()
         }
@@ -119,15 +113,7 @@ class TranslationBookService(
   private fun checkNames() {
     val notFoundKeys = mutableListOf<String>()
     books.forEachIndexed books@{ _, book ->
-      book.translationBook.forEachIndexed data@{ dataIndex, data ->
-        if (data.translate != null) return@data
-        try {
-          dialogProvider.get(data.toTranslate)
-        } catch (e: KeyNotFoundException) {
-          notFoundKeys.add("${book.name}|${dataIndex + 1}")
-          notFoundKeys.add(e.notFoundKey)
-        }
-      }
+      notFoundKeys.addAll(book.checkNames(dialogProvider))
     }
     if (notFoundKeys.isNotEmpty()) {
       Path.of("output.txt").writeLines(notFoundKeys.distinct())

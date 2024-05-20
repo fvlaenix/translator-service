@@ -1,5 +1,7 @@
 package com.fvlaenix.translation
 
+import com.fvlaenix.translation.table.TranslationBookService
+
 class NamesService(private val properties: Map<String, String>) {
 
   constructor(name: String) : this(
