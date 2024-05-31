@@ -36,9 +36,9 @@ class ProvidersCollection(private val providers: List<SystemDialogProvider<*>>) 
   companion object {
     fun defaultProvidersCollection(namesService: NamesService): ProvidersCollection =
       ProvidersCollection(listOf(
-        ElmiaDialogProvider(namesService),
-        SylphDialogProvider(namesService),
-        Bo10FDialogProvider(),
+        ElmiaNameDialogProvider(namesService),
+        SylphNameDialogProvider(namesService),
+        Bo10FNameDialogProvider(),
         IconDialogProvider()
       ))
   }

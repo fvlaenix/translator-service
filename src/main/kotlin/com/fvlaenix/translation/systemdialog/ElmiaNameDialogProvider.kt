@@ -1,10 +1,9 @@
 package com.fvlaenix.translation.systemdialog
 
 import com.fvlaenix.translation.NamesService
-import com.fvlaenix.translation.systemdialog.SystemDialogUtils.removeQuotesIfNeeded
 
-class ElmiaDialogProvider(private val namesService: NamesService) : SystemDialogProvider<ElmiaDialogProvider.ElmiaDialog> {
-  data class ElmiaDialog(private val name: String) : SystemDialogProvider.SystemDialog {
+class ElmiaNameDialogProvider(private val namesService: NamesService) : SystemDialogProvider<ElmiaNameDialogProvider.ElmiaDialog> {
+  data class ElmiaDialog(val name: String) : SystemDialogProvider.SystemDialog {
     override fun returnTransform(s: String): String {
       return "$name\n$s"
     }

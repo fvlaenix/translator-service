@@ -2,7 +2,7 @@ package com.fvlaenix.translation.systemdialog
 
 import com.fvlaenix.translation.systemdialog.SystemDialogUtils.removeQuotesIfNeeded
 
-class Bo10FDialogProvider : SystemDialogProvider<Bo10FDialogProvider.Bo10FDialog> {
+class Bo10FNameDialogProvider : SystemDialogProvider<Bo10FNameDialogProvider.Bo10FDialog> {
   companion object {
     val REGEX = "^[A-Z]{3,}\\s*".toRegex()
   }

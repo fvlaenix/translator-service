@@ -3,7 +3,7 @@ package com.fvlaenix.translation.systemdialog
 import com.fvlaenix.translation.NamesService
 import com.fvlaenix.translation.systemdialog.SystemDialogUtils.removeQuotesIfNeeded
 
-class SylphDialogProvider(private val namesService: NamesService) : SystemDialogProvider<SylphDialogProvider.SylphDialog> {
+class SylphNameDialogProvider(private val namesService: NamesService) : SystemDialogProvider<SylphNameDialogProvider.SylphDialog> {
   companion object {
     val REGEX = "\\\\n<([^>]+)>".toRegex()
   }
