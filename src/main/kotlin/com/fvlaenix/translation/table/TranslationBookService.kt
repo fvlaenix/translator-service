@@ -4,7 +4,10 @@ import com.fvlaenix.translation.FilesUtil
 import com.fvlaenix.translation.GPTUtil
 import com.fvlaenix.translation.NamesService
 import com.fvlaenix.translation.gpt.GPT
+import com.fvlaenix.translation.systemdialog.Bo10FNameDialogProvider
+import com.fvlaenix.translation.systemdialog.ElmiaNameDialogProvider
 import com.fvlaenix.translation.systemdialog.ProvidersCollection
+import com.fvlaenix.translation.systemdialog.SylphNameDialogProvider
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import java.nio.file.Path
@@ -86,8 +89,15 @@ class TranslationBookService(
       }
       linesTalk[index] = startResult
       when (translateData) {
-        is TranslationData.TranslationSimpleData -> GPT.TextTranslation(line, translateData.translate)
-        is TranslationData.TranslationDataWithNameData -> GPT.DialogTranslation(translateData.name, line, translateData.translate)
+        is TranslationData.TranslationSimpleData -> {
+          when (val firstSystem = startResult.system.firstOrNull()) {
+            is Bo10FNameDialogProvider.Bo10FDialog -> GPT.DialogTranslation(firstSystem.name, startResult.result, translateData.translate)
+            is ElmiaNameDialogProvider.ElmiaDialog -> GPT.DialogTranslation(firstSystem.name, startResult.result, translateData.translate)
+            is SylphNameDialogProvider.SylphDialog -> GPT.DialogTranslation(firstSystem.name, startResult.result, translateData.translate)
+            else -> GPT.TextTranslation(startResult.result, translateData.translate)
+          }
+        }
+        is TranslationData.TranslationDataWithNameData -> GPT.DialogTranslation(translateData.name, startResult.result, translateData.translate)
       }
     }
     val result = try {

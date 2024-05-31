@@ -9,7 +9,7 @@ import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.name
 
-const val MAX_COUNT_LINES = 50
+const val MAX_COUNT_LINES = 55
 
 class TranslationBook(inputStream: InputStream, val path: Path) {
 

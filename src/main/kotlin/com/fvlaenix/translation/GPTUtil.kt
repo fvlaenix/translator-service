@@ -78,7 +78,7 @@ object GPTUtil {
     val toTranslate = toTranslateWithoutFilter.filter { it.translation == null }
     if (toTranslate.isNotEmpty()) {
       val response = translate(prompt, model, toTranslate.map { it.original })
-      if (response.size != toTranslate.size) throw GPT.IncorrectTranslation()
+      if (response.size != toTranslate.size) throw GPT.IncorrectTranslation("Not matched sizes")
       toTranslate.zip(response).forEach { (translation1, translation2) ->
         translation1.translation = translation2
       }

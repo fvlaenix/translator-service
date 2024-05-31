@@ -29,13 +29,13 @@ class TranslationBookServiceTest {
   
   @Test
   fun `test icon`() = assertTranslationWithNames(
-    "\\n<a>\\I[205]Hello",
-    "\"\\I[205]Hello\"",
-    "\"\\I[205]Привет\"",
+    "\\n<a>\\I[205]Hello...",
+    "\"\\I[205]Hello...\"",
+    "\"\\I[205]Привет...\"",
     listOf(
-      SylphDialogProvider.SylphDialog("ф")
+      SylphNameDialogProvider.SylphDialog("ф")
     ),
-    "\\n<ф>\\I[205]Привет",
+    "\\n<ф>\\I[205]Привет...",
   )
 
   @Test
@@ -52,7 +52,7 @@ class TranslationBookServiceTest {
     "name\n「Hello...」",
     "「Hello...」",
     "\"Привет\"",
-    listOf(ElmiaDialogProvider.ElmiaDialog("имя")),
+    listOf(ElmiaNameDialogProvider.ElmiaDialog("имя")),
     "имя\n\"Привет\""
   )
 
@@ -63,7 +63,7 @@ class TranslationBookServiceTest {
             "「う、美しい……舞うような剣さばきだ……」",
     "「きゃーっ、姫様ーっ！」 「う、美しい……舞うような剣さばきだ……」",
     "\"Типа перевод\"",
-    listOf(ElmiaDialogProvider.ElmiaDialog("имя")),
+    listOf(ElmiaNameDialogProvider.ElmiaDialog("имя")),
     "имя\n\"Типа перевод\""
   )
   
@@ -72,7 +72,7 @@ class TranslationBookServiceTest {
       "ROSE\n" + "Abracadabra\nAbracadabra",
       "\"Abracadabra Abracadabra\"",
     "\"Абракадабра абракадабра\"",
-    listOf(Bo10FDialogProvider.Bo10FDialog("ROSE")),
+    listOf(Bo10FNameDialogProvider.Bo10FDialog("ROSE")),
     "ROSE\nАбракадабра абракадабра"
     )
 }
