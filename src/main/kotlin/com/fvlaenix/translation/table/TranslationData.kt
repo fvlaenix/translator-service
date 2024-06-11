@@ -23,7 +23,7 @@ sealed class TranslationData {
     private val targetColumn: Int
   ): TranslationData() {
     val name: String
-      get() = data[nameColumn]
+      get() = data.getOrNull(nameColumn) ?: ""
     override val toTranslate: String
       get() = data[sourceColumn]
     override var translate: String?

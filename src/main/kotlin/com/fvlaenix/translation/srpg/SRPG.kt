@@ -78,13 +78,13 @@ class SRPG(
       val workbook = XSSFWorkbook(xlsxPath.inputStream())
       val sheet = workbook.getSheetAt(0)
       val firstRow = sheet.getRow(0)
-      val saver: (List<String>) -> Unit = if (firstRow != null && firstRow.getCell(0).stringCellValue.startsWith("fvlaenix-magic-words")) {
-        { translationMap[it[0].trim()] = it[2].trim() }
+      val saver: (List<String?>) -> Unit = if (firstRow != null && firstRow.getCell(0).stringCellValue.startsWith("fvlaenix-magic-words")) {
+        { translationMap[it[0]!!.trim()] = it[2]!!.trim() }
       } else {
-        { translationMap[it[0].trim()] = it[1].trim() }
+        { translationMap[it[0]!!.trim()] = it[1]!!.trim() }
       }
       sheet.toList().forEachIndexed { indexRow, row ->
-        val cells = row.toList().map { it.stringCellValue }
+        val cells = (0..<row.lastCellNum).map { row.getCell(it)?.stringCellValue }
         when (cells.size) {
           0 -> Unit
           1 -> Unit
