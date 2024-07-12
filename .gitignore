@@ -45,4 +45,3 @@ bin/
 /src/main/resources/*_EN.properties
 /src/main/resources/*_RU.properties
 /src/main/resources/prompt_*.txt
-/gradle/wrapper/gradle-wrapper.jar
