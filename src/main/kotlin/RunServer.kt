@@ -19,7 +19,7 @@ fun main() {
   val server = ChatGPTServer(
     port = 50052,
     // model = "gpt-3.5-turbo-0613",
-    model = "gpt-4-0613"
+    model = "gpt-4-turbo"
   )
   server.start()
   runServerLog.log(Level.INFO, "Started server")
