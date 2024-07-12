@@ -6,7 +6,6 @@ plugins {
     id("com.google.protobuf") version "0.9.4"
     kotlin("plugin.serialization") version "1.9.24"
     id("com.github.johnrengelman.shadow") version "8.1.1"
-    application
 }
 
 group = "com.fvlaenix"
