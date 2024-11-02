@@ -22,7 +22,7 @@ class TranslationTxtService(
     coroutineScope {
       ensureActive()
       val toTranslateBatches = Util.splitWords(text, COUNT_WORDS)
-      val maxAttempts = 3
+      val maxAttempts = 5
       for (batch in toTranslateBatches) {
         var result: List<String>? = null
         var attempts = 0

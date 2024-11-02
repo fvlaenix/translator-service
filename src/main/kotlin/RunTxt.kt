@@ -6,6 +6,6 @@ suspend fun main(args: Array<String>) {
     println("Arguments: <path_to_txt>")
   }
   val path = Path.of(args[0])
-  val translationTxtService = TranslationTxtService(path, "gpt-4")
+  val translationTxtService = TranslationTxtService(path, "gpt-4-turbo")
   translationTxtService.translate()
 }
