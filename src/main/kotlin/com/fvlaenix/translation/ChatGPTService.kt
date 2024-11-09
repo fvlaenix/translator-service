@@ -3,6 +3,7 @@ package com.fvlaenix.translation
 import com.fvlaenix.alive.protobuf.IsAliveRequest
 import com.fvlaenix.alive.protobuf.IsAliveResponse
 import com.fvlaenix.alive.protobuf.isAliveResponse
+import com.fvlaenix.translation.gpt.GPT
 import com.fvlaenix.translation.protobuf.*
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Level
@@ -62,8 +63,8 @@ class ChatGPTService(private val model: String): TranslationServiceGrpcKt.Transl
   override suspend fun translationFile(request: TranslationFilesRequest): TranslationFilesResponse {
     return withLog("translationFile", "filenames:${request.requestsList.joinToString { it.fileName }}") {
       val files = request.requestsList
-      val original = files.flatMap { file -> file.blocksList.map { block -> GPTUtil.TranslationData(block.text, if (block.hasTranslation()) block.translation else null) } }
-      val translation = GPTUtil.translate(PERSONA_TRANSLATION_REQUEST, model, original, COUNT_ATTEMPTS_TO_TRANSLATE) { Util.splitWords(it, COUNT_WORDS_LIMIT) }
+      val original = files.flatMap { file -> file.blocksList.map { block -> GPT.TextTranslation(block.text, if (block.hasTranslation()) block.translation else null) } }
+      val translation = GPT.standardRequest(original)
       if (translation.size != original.size) {
         LOG.severe("Sizes of translation and original is not matched: $original\n\n$translation")
         return@withLog translationFilesResponse { this.error = "Internal error: Sizes of translation and original is not matched. Report this to person who run bot" }
@@ -78,7 +79,7 @@ class ChatGPTService(private val model: String): TranslationServiceGrpcKt.Transl
           translationBlock {
             this.text = currentTranslation.original
             if (currentTranslation.translation != null) {
-              this.translation = currentTranslation.translation
+              this.translation = currentTranslation.translation!!
             } else {
               errors.add(Pair(fileName, index))
             }
