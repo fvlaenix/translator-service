@@ -22,7 +22,7 @@ class TranslationBookService(
 ) {
   private val books : List<TranslationBook> = FilesUtil.getPaths(path, filter = { it.extension == "xlxs" || it.extension == "xlsx" })
     .map { TranslationBook(it.inputStream(), path.relativize(it)) }
-  private val cache : MutableMap<String, String> = books
+  val cache : MutableMap<String, String> = books
     .flatMap { book -> book.translationBook }
     .filter { it.translate != null }
     .associate { it.toTranslate to it.translate!! }
@@ -138,4 +138,8 @@ class TranslationBookService(
   }
 
   class KeyNotFoundException(val notFoundKey: String) : IllegalStateException("Can't found key for $notFoundKey")
+
+  fun addToCache(anotherBookService: TranslationBookService) {
+    cache.putAll(anotherBookService.cache)
+  }
 }
