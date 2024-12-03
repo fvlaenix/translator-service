@@ -3,8 +3,8 @@ package com.fvlaenix.translation
 object Util {
   fun splitWords(lines: List<String>, countWordsLimit: Int): List<List<String>> {
     val toTranslateBatches = mutableListOf<List<String>>()
-    var buffer = mutableListOf<String>()
-    for (line in lines) {
+    var buffer = mutableListOf<String>(lines.first())
+    for (line in lines.drop(1)) {
       if (buffer.sumOf { it.split("\\s+".toRegex()).count() } + line.split("\\s+".toRegex()).count() > countWordsLimit) {
         toTranslateBatches.add(buffer)
         buffer = mutableListOf()
