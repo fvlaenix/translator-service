@@ -9,7 +9,7 @@ object FilesUtil {
     return if (this.all { it.nameWithoutExtension.toIntOrNull() != null }) {
       this.sortedBy { it.nameWithoutExtension.toInt() }
     } else {
-      this.sortedBy { it.nameWithoutExtension }
+      this.sortedBy { it.path }
     }
   }
 
