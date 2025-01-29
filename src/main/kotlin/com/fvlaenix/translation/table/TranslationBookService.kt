@@ -43,6 +43,19 @@ class TranslationBookService(
     }
   }
 
+  private fun filterMapKeys(map: Map<String, String>): Map<String, String> {
+    val keys = map.keys.toList() // Получаем список ключей
+    val filteredKeys = keys.filter { key ->
+      // Проверяем, что ключ не является подстрокой другого ключа
+      keys.none { other ->
+        other != key && other.contains(key)
+      }
+    }
+    // Создаем новую мапу только с отфильтрованными ключами
+    return map.filterKeys { it in filteredKeys }
+  }
+
+
   private suspend fun translateBook(book: TranslationBook) = coroutineScope {
     ensureActive()
     var currentLine = 0
@@ -53,6 +66,15 @@ class TranslationBookService(
       translateSubbook(book, currentLine, finishLine)
       currentLine = finishLine
       if (currentLine > countLines && countLines != 0) return@coroutineScope
+    }
+    // check translation for critical names
+    book.translationBook.forEachIndexed { index, translationData ->
+      val namesTranslation = filterMapKeys(namesService.checkForName(translationData.toTranslate))
+      namesTranslation.forEach { toTranslateName, translatedName ->
+        if (translationData.translate?.contains(translatedName, ignoreCase = true) == false) {
+          println("Name \"$translatedName\" should be inside line \"${translationData.translate}\", but it isn't. Book: ${book.path}, line: $index")
+        }
+      }
     }
   }
 
@@ -74,7 +96,16 @@ class TranslationBookService(
     val linesWithTranslation = book.translationBook.subList(startLine, endLine)
       .mapIndexed { index, translationData -> Pair(index, translationData) }
     linesWithTranslation.forEach {
+      try {
+        val translation = namesService[it.second.toTranslate]
+        it.second.translate = translation
+        return@forEach
+      } catch (_: KeyNotFoundException) {
+        // ignore
+      }
+
       if (it.second.translate != null) return@forEach
+
       if (cache.containsKey(it.second.toTranslate)) {
         it.second.translate = cache[it.second.toTranslate]
       }

@@ -15,4 +15,13 @@ class NamesService(private val properties: Map<String, String>) {
     if (name == "") return ""
     return properties[name] ?: throw TranslationBookService.KeyNotFoundException(name)
   }
+
+  /**
+   * Returns translation of names what meets in this line
+   */
+  fun checkForName(s: String): Map<String, String> {
+    return properties.entries
+      .filter { s.contains(it.key, ignoreCase = true) }
+      .associate { Pair(it.key, it.value) }
+  }
 }
