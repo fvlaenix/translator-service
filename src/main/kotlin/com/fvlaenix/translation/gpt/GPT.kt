@@ -15,26 +15,27 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.time.Duration.Companion.seconds
 
+@Deprecated("Use Translator interface and GPTTranslator implementation instead")
 object GPT {
   private val jsonPrompt = GPT::class.java.getResource("/jsonPrompt.txt")!!.readText()
   private val txtPrompt = GPT::class.java.getResource("/prompt_EN.txt")!!.readText()
-  
+
   sealed class Translation(
     val original: String,
     var translation: String?
   )
-  
+
   class TextTranslation(
     original: String,
     translation: String?
   ) : Translation(original, translation)
-  
+
   class DialogTranslation(
     val name: String,
     original: String,
     translation: String?
   ) : Translation(original, translation)
-  
+
   class IncorrectTranslation(val s: String?) : Exception(s)
 
   @Suppress("UNCHECKED_CAST")
@@ -42,7 +43,7 @@ object GPT {
     return if (data.all { it is TextTranslation }) standardTextRequest(data as List<TextTranslation>)
     else standardJsonRequest(data)
   }
-  
+
   suspend fun standardJsonRequest(data: List<GPT.Translation>): List<GPT.Translation> {
     var attempts = 5
     while (attempts > 0) {
@@ -55,10 +56,10 @@ object GPT {
     }
     throw IllegalStateException()
   }
-  
+
   suspend fun standardTextRequest(data: List<TextTranslation>): List<TextTranslation> =
     GPTUtil.translateNew(txtPrompt, "gpt-4-turbo", data)
-  
+
   @OptIn(ExperimentalSerializationApi::class)
   suspend fun jsonRequest(model: String, prompt: String, data: List<GPT.Translation>): List<GPT.Translation> {
     @Serializable
@@ -82,7 +83,7 @@ object GPT {
           is DialogTranslation -> Request(it.name, it.original)
         }
       }
-    
+
     val response: List<Request> = if (requestData.isEmpty()) {
       return emptyList()
     } else {
@@ -93,7 +94,7 @@ object GPT {
     if (response.size != requestData.size) {
       throw IncorrectTranslation("Not matched sizes")
     }
-    
+
     val translatedData: List<GPT.Translation> = requestData.zip(response).map { (request, response) ->
       // if (request.name != response.name) throw IncorrectTranslation("Names not met: ${request.name} - ${response.name}")
       if (response.name == null) {
@@ -120,7 +121,7 @@ object GPT {
     }
     return merged
   }
-  
+
   /**
    * Stupid request to OpenAI without checking
    */

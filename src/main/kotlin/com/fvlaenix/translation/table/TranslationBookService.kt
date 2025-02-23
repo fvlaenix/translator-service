@@ -1,24 +1,29 @@
 package com.fvlaenix.translation.table
 
 import com.fvlaenix.translation.FilesUtil
-import com.fvlaenix.translation.GPTUtil
 import com.fvlaenix.translation.NamesService
-import com.fvlaenix.translation.gpt.GPT
+import com.fvlaenix.translation.openai.OpenAIServiceImpl
 import com.fvlaenix.translation.systemdialog.Bo10FNameDialogProvider
 import com.fvlaenix.translation.systemdialog.ElmiaNameDialogProvider
 import com.fvlaenix.translation.systemdialog.ProvidersCollection
 import com.fvlaenix.translation.systemdialog.SylphNameDialogProvider
+import com.fvlaenix.translation.translator.DialogTranslation
+import com.fvlaenix.translation.translator.OpenAIGPTTranslator
+import com.fvlaenix.translation.translator.TextTranslation
+import com.fvlaenix.translation.translator.Translator
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import java.nio.file.Path
-import kotlin.io.path.*
+import kotlin.io.path.inputStream
+import kotlin.io.path.writeLines
 
 class TranslationBookService(
   path: Path,
   language: String,
   gameId: String,
   private val namesService: NamesService = NamesService("${gameId}_$language.properties"),
-  private val dialogProvider: ProvidersCollection = ProvidersCollection.defaultProvidersCollection(namesService)
+  private val dialogProvider: ProvidersCollection = ProvidersCollection.defaultProvidersCollection(namesService),
+  private val translator: Translator = OpenAIGPTTranslator(OpenAIServiceImpl())
 ) {
   private val books : List<TranslationBook> = FilesUtil.getPaths(path, filter = { it.extension == "xlxs" || it.extension == "xlsx" })
     .map { TranslationBook(it.inputStream(), path.relativize(it)) }
@@ -27,7 +32,7 @@ class TranslationBookService(
     .filter { it.translate != null }
     .associate { it.toTranslate to it.translate!! }
     .toMutableMap()
-  
+
   suspend fun translate() = coroutineScope {
     ensureActive()
     checkNames()
@@ -71,6 +76,10 @@ class TranslationBookService(
     book.translationBook.forEachIndexed { index, translationData ->
       val namesTranslation = filterMapKeys(namesService.checkForName(translationData.toTranslate))
       namesTranslation.forEach { toTranslateName, translatedName ->
+        // TODO remove somehow exceptions
+        if (translatedName == "Me") return@forEach
+        if (translatedName == "Volunteer Army") return@forEach
+        if (translatedName == "Common") return@forEach
         if (translationData.translate?.contains(translatedName, ignoreCase = true) == false) {
           println("Name \"$translatedName\" should be inside line \"${translationData.translate}\", but it isn't. Book: ${book.path}, line: $index")
         }
@@ -111,7 +120,7 @@ class TranslationBookService(
       }
     }
     if (linesWithTranslation.isEmpty()) return
-    val lines: List<GPT.Translation> = linesWithTranslation.mapIndexed { index, (number, translateData) ->
+    val lines = linesWithTranslation.mapIndexed { index, (number, translateData) ->
       val line = translateData.toTranslate
       val startResult = try {
         dialogProvider.get(line)
@@ -122,31 +131,34 @@ class TranslationBookService(
       when (translateData) {
         is TranslationData.TranslationSimpleData -> {
           when (val firstSystem = startResult.system.firstOrNull()) {
-            is Bo10FNameDialogProvider.Bo10FDialog -> GPT.DialogTranslation(firstSystem.name, startResult.result, translateData.translate)
-            is ElmiaNameDialogProvider.ElmiaDialog -> GPT.DialogTranslation(firstSystem.name, startResult.result, translateData.translate)
-            is SylphNameDialogProvider.SylphDialog -> GPT.DialogTranslation(firstSystem.name, startResult.result, translateData.translate)
-            else -> GPT.TextTranslation(startResult.result, translateData.translate)
+            is Bo10FNameDialogProvider.Bo10FDialog -> DialogTranslation(firstSystem.name, startResult.result, translateData.translate)
+            is ElmiaNameDialogProvider.ElmiaDialog -> DialogTranslation(firstSystem.name, startResult.result, translateData.translate)
+            is SylphNameDialogProvider.SylphDialog -> DialogTranslation(firstSystem.name, startResult.result, translateData.translate)
+            else -> TextTranslation(startResult.result, translateData.translate)
           }
         }
-        is TranslationData.TranslationDataWithNameData -> GPT.DialogTranslation(translateData.name, startResult.result, translateData.translate)
+        is TranslationData.TranslationDataWithNameData -> DialogTranslation(translateData.name, startResult.result, translateData.translate)
       }
     }
     val result = try {
-      GPT.standardRequest(lines)
-    } catch (e: GPTUtil.GPTLinesNotMatchException) {
+      translator.translate(lines)
+    } catch (e: Exception) {
       null
     }
     if (result != null) {
       linesWithTranslation.zip(result).forEachIndexed { index, pair ->
-        var resultLine = pair.second.translation!!
-        if (resultLine.startsWith("\"") && resultLine.endsWith("\"")) {
-          resultLine = resultLine.substring(1, resultLine.length - 1).trim()
+        val translation = pair.second.translation
+        if (translation != null) {
+          var resultLine = translation
+          if (resultLine.startsWith("\"") && resultLine.endsWith("\"")) {
+            resultLine = resultLine.substring(1, resultLine.length - 1).trim()
+          }
+          if (linesTalk.containsKey(index)) {
+            resultLine = dialogProvider.restore(resultLine, linesTalk[index]!!)
+          }
+          cache[pair.first.second.toTranslate] = resultLine
+          pair.first.second.translate = resultLine
         }
-        if (linesTalk.containsKey(index)) {
-          resultLine = dialogProvider.restore(resultLine, linesTalk[index]!!)
-        }
-        cache[pair.first.second.toTranslate] = resultLine
-        pair.first.second.translate = resultLine
       }
     }
   }

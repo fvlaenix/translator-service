@@ -1,13 +1,13 @@
 import com.fvlaenix.translation.NamesService
 import com.fvlaenix.translation.systemdialog.*
-import junit.framework.TestCase
-import org.junit.Test
+import org.junit.jupiter.api.Test
+import kotlin.test.assertEquals
 
 class TranslationBookServiceTest {
 
   companion object {
     val CLASSIC_NAMES_SERVICE = NamesService(mapOf("a" to "ф", "b" to "б", "name" to "имя"))
-    
+
     fun defaultDialogProvider(): ProvidersCollection =
       ProvidersCollection.defaultProvidersCollection(CLASSIC_NAMES_SERVICE)
   }
@@ -21,12 +21,13 @@ class TranslationBookServiceTest {
     dialogProvider: ProvidersCollection = defaultDialogProvider()
   ) {
     val resultParse = dialogProvider.get(test)
-    TestCase.assertEquals(expectedToTranslate, resultParse.result)
-    TestCase.assertEquals(expectedSystem, resultParse.system)
+    assertEquals(expectedToTranslate, resultParse.result)
+    assertEquals(expectedSystem, resultParse.system)
+
     val resultTranslate = dialogProvider.restore(translateOfExpected, resultParse)
-    TestCase.assertEquals(expectedResult, resultTranslate)
+    assertEquals(expectedResult, resultTranslate)
   }
-  
+
   @Test
   fun `test icon`() = assertTranslationWithNames(
     "\\n<a>\\I[205]Hello...",
@@ -66,7 +67,7 @@ class TranslationBookServiceTest {
     listOf(ElmiaNameDialogProvider.ElmiaDialog("имя")),
     "имя\n\"Типа перевод\""
   )
-  
+
   @Test
   fun `test bo 10f name`() = assertTranslationWithNames(
       "ROSE\n" + "Abracadabra\nAbracadabra",

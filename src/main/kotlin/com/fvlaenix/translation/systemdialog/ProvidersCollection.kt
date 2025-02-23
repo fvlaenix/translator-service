@@ -24,7 +24,7 @@ class ProvidersCollection(private val providers: List<SystemDialogProvider<*>>) 
     }
     return ProvidersResult(current, systemDialogs)
   }
-  
+
   fun restore(s: String, providersResult: ProvidersResult): String {
     var current = s
     providersResult.system.asReversed().forEach { systemDialog ->
@@ -42,7 +42,7 @@ class ProvidersCollection(private val providers: List<SystemDialogProvider<*>>) 
         IconDialogProvider()
       ))
   }
-  
+
   class ProvidersResult(
     val result: String,
     val system: List<SystemDialogProvider.SystemDialog>

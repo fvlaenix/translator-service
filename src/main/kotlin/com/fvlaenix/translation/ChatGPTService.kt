@@ -3,15 +3,20 @@ package com.fvlaenix.translation
 import com.fvlaenix.alive.protobuf.IsAliveRequest
 import com.fvlaenix.alive.protobuf.IsAliveResponse
 import com.fvlaenix.alive.protobuf.isAliveResponse
-import com.fvlaenix.translation.gpt.GPT
 import com.fvlaenix.translation.protobuf.*
+import com.fvlaenix.translation.translator.Translator
+import com.fvlaenix.translation.translator.GPTTranslator
+import com.fvlaenix.translation.translator.TextTranslation
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Level
 import java.util.logging.Logger
 
 private val LOG = Logger.getLogger(ChatGPTService::class.java.name)
 
-class ChatGPTService(private val model: String): TranslationServiceGrpcKt.TranslationServiceCoroutineImplBase() {
+class ChatGPTService(
+  private val model: String,
+  private val translator: Translator = GPTTranslator(model)
+): TranslationServiceGrpcKt.TranslationServiceCoroutineImplBase() {
 
   private val atomicId = AtomicInteger(0)
 
@@ -48,9 +53,9 @@ class ChatGPTService(private val model: String): TranslationServiceGrpcKt.Transl
       val untranslatedText = request.text
       translationResponse {
         runCatching {
-          this@translationResponse.text = GPTUtil.translate(
-            PERSONA_TRANSLATION_REQUEST, model,
-            untranslatedText.split("\n"), 5)?.joinToString(separator = "\n") ?: throw Exception("Can't translate with such count of attempts")
+          val translations = untranslatedText.split("\n").map { TextTranslation(it) }
+          val result = translator.translate(translations)
+          this@translationResponse.text = result.joinToString(separator = "\n") { it.translation ?: throw Exception("Translation failed") }
         }
           .getOrElse {
             LOG.log(Level.SEVERE, "Exception while trying to get translation", it)
@@ -63,8 +68,8 @@ class ChatGPTService(private val model: String): TranslationServiceGrpcKt.Transl
   override suspend fun translationFile(request: TranslationFilesRequest): TranslationFilesResponse {
     return withLog("translationFile", "filenames:${request.requestsList.joinToString { it.fileName }}") {
       val files = request.requestsList
-      val original = files.flatMap { file -> file.blocksList.map { block -> GPT.TextTranslation(block.text, if (block.hasTranslation()) block.translation else null) } }
-      val translation = GPT.standardRequest(original)
+      val original = files.flatMap { file -> file.blocksList.map { block -> TextTranslation(block.text, if (block.hasTranslation()) block.translation else null) } }
+      val translation = translator.translate(original)
       if (translation.size != original.size) {
         LOG.severe("Sizes of translation and original is not matched: $original\n\n$translation")
         return@withLog translationFilesResponse { this.error = "Internal error: Sizes of translation and original is not matched. Report this to person who run bot" }
