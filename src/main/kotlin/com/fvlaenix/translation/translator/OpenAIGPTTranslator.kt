@@ -95,8 +95,4 @@ class OpenAIGPTTranslator(
       }
     }
   }
-
-  companion object {
-    fun create(textModelService: TextModelService): OpenAIGPTTranslator = OpenAIGPTTranslator(textModelService)
-  }
 }

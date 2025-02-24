@@ -4,9 +4,10 @@ import com.fvlaenix.alive.protobuf.IsAliveRequest
 import com.fvlaenix.alive.protobuf.IsAliveResponse
 import com.fvlaenix.alive.protobuf.isAliveResponse
 import com.fvlaenix.translation.protobuf.*
-import com.fvlaenix.translation.translator.Translator
-import com.fvlaenix.translation.translator.GPTTranslator
+import com.fvlaenix.translation.textmodel.OpenAIServiceImpl
+import com.fvlaenix.translation.translator.OpenAIGPTTranslator
 import com.fvlaenix.translation.translator.TextTranslation
+import com.fvlaenix.translation.translator.Translator
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -14,9 +15,10 @@ import java.util.logging.Logger
 private val LOG = Logger.getLogger(ChatGPTService::class.java.name)
 
 class ChatGPTService(
-  private val model: String,
-  private val translator: Translator = GPTTranslator(model)
+  private val translator: Translator = OpenAIGPTTranslator(OpenAIServiceImpl()),
 ): TranslationServiceGrpcKt.TranslationServiceCoroutineImplBase() {
+
+  constructor(model: String) : this(OpenAIGPTTranslator(OpenAIServiceImpl(model)))
 
   private val atomicId = AtomicInteger(0)
 
@@ -40,12 +42,6 @@ class ChatGPTService(
       logEnd(method, id)
     }
     return result
-  }
-
-  companion object {
-    val PERSONA_TRANSLATION_REQUEST = ChatGPTService::class.java.getResourceAsStream("/prompt.txt")!!.bufferedReader().readText()
-    const val COUNT_WORDS_LIMIT = 250
-    const val COUNT_ATTEMPTS_TO_TRANSLATE = 5
   }
 
   override suspend fun translation(request: TranslationRequest): TranslationResponse {
