@@ -8,7 +8,7 @@ import com.fvlaenix.translation.systemdialog.ProvidersCollection
 import com.fvlaenix.translation.systemdialog.SylphNameDialogProvider
 import com.fvlaenix.translation.textmodel.OpenAIServiceImpl
 import com.fvlaenix.translation.translator.DialogTranslation
-import com.fvlaenix.translation.translator.OpenAIGPTTranslator
+import com.fvlaenix.translation.translator.TextModelServiceTranslator
 import com.fvlaenix.translation.translator.TextTranslation
 import com.fvlaenix.translation.translator.Translator
 import kotlinx.coroutines.coroutineScope
@@ -23,7 +23,7 @@ class TranslationBookService(
   gameId: String,
   private val namesService: NamesService = NamesService("${gameId}_$language.properties"),
   private val dialogProvider: ProvidersCollection = ProvidersCollection.defaultProvidersCollection(namesService),
-  private val translator: Translator = OpenAIGPTTranslator(OpenAIServiceImpl())
+  private val translator: Translator = TextModelServiceTranslator(OpenAIServiceImpl())
 ) {
   private val books: List<TranslationBook> =
     FilesUtil.getPaths(path, filter = { it.extension == "xlxs" || it.extension == "xlsx" })

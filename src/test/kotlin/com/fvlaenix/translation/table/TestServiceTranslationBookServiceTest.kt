@@ -2,7 +2,7 @@ package com.fvlaenix.translation.table
 
 import com.fvlaenix.translation.NamesService
 import com.fvlaenix.translation.textmodel.TestTextModelService
-import com.fvlaenix.translation.translator.OpenAIGPTTranslator
+import com.fvlaenix.translation.translator.TextModelServiceTranslator
 import com.fvlaenix.translation.translator.Translator
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -33,7 +33,7 @@ class TestServiceTranslationBookServiceTest {
     // Set default response for any unknown request
     testOpenAIService.setDefaultResponse("Test response")
 
-    translator = OpenAIGPTTranslator(testOpenAIService)
+    translator = TextModelServiceTranslator(testOpenAIService)
 
     // Create a test Excel file
     val testFile = tempDir.resolve("simple_test.xlsx")
@@ -82,7 +82,7 @@ class TestServiceTranslationBookServiceTest {
     testOpenAIService.setResponse(
       "Original text to translate",
       "Translated text",
-      textPrompt = OpenAIGPTTranslator::class.java.getResource("/prompt.txt")!!.readText()
+      textPrompt = TextModelServiceTranslator::class.java.getResource("/prompt.txt")!!.readText()
     )
 
     // Perform translation
@@ -134,7 +134,7 @@ class TestServiceTranslationBookServiceTest {
     testOpenAIService.setResponse(
       "First text\nSecond text",
       "First translation\nSecond translation",
-      textPrompt = OpenAIGPTTranslator::class.java.getResource("/prompt.txt")!!.readText()
+      textPrompt = TextModelServiceTranslator::class.java.getResource("/prompt.txt")!!.readText()
     )
 
     // Create service with new file

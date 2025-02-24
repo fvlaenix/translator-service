@@ -7,12 +7,13 @@ import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.http.Timeout
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
+import java.io.Closeable
 import kotlin.time.Duration.Companion.seconds
 
 class OpenAIServiceImpl(
   private val model: String = "gpt-4-turbo",
   private val maxRetries: Int = 3
-) : TextModelService {
+) : TextModelService, Closeable {
   private val openAI = OpenAI(
     token = TOKEN,
     timeout = Timeout(socket = 180.seconds)
@@ -52,7 +53,6 @@ class OpenAIServiceImpl(
         )
       )
     }
-
     val chatCompletionRequest = ChatCompletionRequest(
       model = ModelId(model),
       messages = messages
@@ -61,5 +61,9 @@ class OpenAIServiceImpl(
     val completion = openAI.chatCompletion(chatCompletionRequest)
     return completion.choices[0].message.content
       ?: throw IllegalStateException("Received null response from OpenAI")
+  }
+
+  override fun close() {
+    openAI.close()
   }
 }

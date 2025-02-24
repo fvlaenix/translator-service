@@ -4,10 +4,10 @@ import com.fvlaenix.translation.textmodel.TextModelService
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
-class OpenAIGPTTranslator(
+class TextModelServiceTranslator(
   private val textModelService: TextModelService,
-  private val jsonPrompt: String = OpenAIGPTTranslator::class.java.getResource("/jsonPrompt.txt")!!.readText(),
-  private val textPrompt: String = OpenAIGPTTranslator::class.java.getResource("/prompt.txt")!!.readText()
+  private val jsonPrompt: String = TextModelServiceTranslator::class.java.getResource("/jsonPrompt.txt")!!.readText(),
+  private val textPrompt: String = TextModelServiceTranslator::class.java.getResource("/prompt.txt")!!.readText()
 ) : Translator {
   companion object {
     val JSON = Json { ignoreUnknownKeys = true }
