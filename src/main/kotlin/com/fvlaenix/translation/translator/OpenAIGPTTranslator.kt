@@ -7,7 +7,7 @@ import kotlinx.serialization.json.JsonObject
 class OpenAIGPTTranslator(
   private val textModelService: TextModelService,
   private val jsonPrompt: String = OpenAIGPTTranslator::class.java.getResource("/jsonPrompt.txt")!!.readText(),
-  private val textPrompt: String = OpenAIGPTTranslator::class.java.getResource("/prompt_EN.txt")!!.readText()
+  private val textPrompt: String = OpenAIGPTTranslator::class.java.getResource("/prompt.txt")!!.readText()
 ) : Translator {
 
   class IncorrectTranslation(message: String?) : Exception(message)
