@@ -25,12 +25,12 @@ class OpenAIGPTTranslator(
     val untranslated = data.filter { it.translation == null }
     if (untranslated.isEmpty()) return data
 
-    val jsonData = untranslated.map { translation ->
+    val jsonData = untranslated.joinToString(",\n", "[\n", "\n]") { translation ->
       when (translation) {
         is TextTranslation -> """{"text": "${translation.original}"}"""
         is DialogTranslation -> """{"name": "${translation.name}", "text": "${translation.original}"}"""
       }
-    }.joinToString(",\n", "[\n", "\n]")
+    }
 
     val translatedJson = try {
       textModelService.sendRequest(jsonData, jsonPrompt)
