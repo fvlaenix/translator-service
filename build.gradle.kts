@@ -27,6 +27,7 @@ dependencies {
 
     implementation(platform("com.aallam.openai:openai-client-bom:3.5.1"))
     implementation("com.aallam.openai:openai-client")
+    implementation("com.aallam.ktoken:ktoken:0.4.0")
     runtimeOnly("io.ktor:ktor-client-okhttp")
 
     implementation("io.github.evanrupert:excelkt:1.0.2")

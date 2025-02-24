@@ -29,6 +29,9 @@ class TestTextModelService : TextModelService {
     errorToThrow = null
   }
 
+  override suspend fun fractionOfTokenLimit(prompt: String, systemMessage: String?): Float =
+    0.5f
+
   override suspend fun sendRequest(prompt: String, systemMessage: String?): String {
     if (shouldThrowError) {
       throw errorToThrow ?: IllegalStateException("Test error")

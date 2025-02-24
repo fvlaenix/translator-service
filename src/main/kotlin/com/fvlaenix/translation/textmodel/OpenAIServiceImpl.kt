@@ -1,6 +1,7 @@
 package com.fvlaenix.translation.textmodel
 
 import TOKEN
+import com.aallam.ktoken.Tokenizer
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.chat.ChatRole
@@ -14,10 +15,29 @@ class OpenAIServiceImpl(
   private val model: String = "gpt-4-turbo",
   private val maxRetries: Int = 3
 ) : TextModelService, Closeable {
+  data class ModelInfo(val name: String, val maxTokenCount: Int)
+
+  init {
+    assert(MODELS.containsKey(model)) { "Model $model does not exist in database" }
+  }
+
+  companion object {
+    val MODELS = mapOf(
+      "gpt-4-turbo" to ModelInfo("gpt-4-turbo", 4096)
+    )
+  }
+
   private val openAI = OpenAI(
     token = TOKEN,
     timeout = Timeout(socket = 180.seconds)
   )
+
+  suspend fun countOfTokens(prompt: String, systemMessage: String?): Int =
+    Tokenizer.of(model).encode((systemMessage ?: "PROMPT") + prompt).count()
+
+  override suspend fun fractionOfTokenLimit(prompt: String, systemMessage: String?): Float =
+    countOfTokens(prompt, systemMessage).toFloat() / MODELS[model]!!.maxTokenCount
+
 
   override suspend fun sendRequest(data: String, systemMessage: String?): String {
     var attempts = maxRetries

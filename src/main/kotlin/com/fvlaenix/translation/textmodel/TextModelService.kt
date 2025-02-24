@@ -1,6 +1,8 @@
 package com.fvlaenix.translation.textmodel
 
 interface TextModelService {
+  suspend fun fractionOfTokenLimit(prompt: String, systemMessage: String? = null): Float
+
   /**
    * Sends a request to text model for processing
    * @param prompt The prompt to send text model
