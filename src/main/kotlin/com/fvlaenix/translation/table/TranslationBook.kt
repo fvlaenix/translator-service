@@ -25,6 +25,7 @@ class TranslationBook(inputStream: InputStream, val path: Path) {
     fun org.apache.poi.xssf.usermodel.XSSFCell.string(): String {
       return this.stringCellValue ?: "<null>"
     }
+
     fun org.apache.poi.xssf.usermodel.XSSFRow.string(index: Int): String {
       return this.getCell(index).string()
     }
@@ -76,9 +77,9 @@ class TranslationBook(inputStream: InputStream, val path: Path) {
     writePath.parent.createDirectories()
     workbook {
       sheet {
-        prefix.forEach { 
+        prefix.forEach {
           row {
-            it.forEach { 
+            it.forEach {
               cell(it)
             }
           }
@@ -93,7 +94,7 @@ class TranslationBook(inputStream: InputStream, val path: Path) {
       }
     }.write(writePath.toString())
   }
-  
+
   fun checkNames(dialogProvider: ProvidersCollection): MutableList<String> {
     val notFoundKeys = mutableListOf<String>()
     translationBook.forEachIndexed data@{ dataIndex, data ->

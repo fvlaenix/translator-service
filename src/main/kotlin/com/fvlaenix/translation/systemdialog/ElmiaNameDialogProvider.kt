@@ -2,13 +2,15 @@ package com.fvlaenix.translation.systemdialog
 
 import com.fvlaenix.translation.NamesService
 
-class ElmiaNameDialogProvider(private val namesService: NamesService) : SystemDialogProvider<ElmiaNameDialogProvider.ElmiaDialog> {
+class ElmiaNameDialogProvider(
+  private val namesService: NamesService
+) : SystemDialogProvider<ElmiaNameDialogProvider.ElmiaDialog> {
   data class ElmiaDialog(val name: String) : SystemDialogProvider.SystemDialog {
     override fun returnTransform(s: String): String {
       return "$name\n$s"
     }
   }
-  
+
   override fun getSystemDialog(s: String): SystemDialogProvider.SystemDialogProviderResult<ElmiaDialog>? {
     val positionOfOpen = s.indexOfFirst { it == '「' }
     val positionOfSplit = s.indexOfFirst { it == '\n' }

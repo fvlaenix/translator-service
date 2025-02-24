@@ -6,7 +6,7 @@ class Bo10FNameDialogProvider : SystemDialogProvider<Bo10FNameDialogProvider.Bo1
   companion object {
     val REGEX = "^[A-Z]{3,}\\s*".toRegex()
   }
-  
+
   data class Bo10FDialog(val name: String) : SystemDialogProvider.SystemDialog {
     override fun returnTransform(s: String): String {
       return "$name\n${removeQuotesIfNeeded(s)}"

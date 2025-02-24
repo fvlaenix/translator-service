@@ -18,12 +18,15 @@ class SRPG(
 ) {
   // Everything is the file (c) Linus
   abstract class File(val path: Path) {
-    init { if (path.notExists()) throw IllegalStateException("Path $path not exists") }
+    init {
+      if (path.notExists()) throw IllegalStateException("Path $path not exists")
+    }
+
     abstract fun createTranslationTables(output: Path)
     abstract fun patchFromTranslationTables(namesService: NamesService, tables: Path, output: Path)
   }
-  
-  class Folder(path: Path, val sub: MutableList<File> = mutableListOf()): File(path) {
+
+  class Folder(path: Path, val sub: MutableList<File> = mutableListOf()) : File(path) {
     override fun patchFromTranslationTables(namesService: NamesService, tables: Path, output: Path) {
       Files.createDirectories(output.resolve(this.path.fileName))
       sub.forEach { file ->
@@ -42,12 +45,12 @@ class SRPG(
       }
     }
   }
-  
-  abstract class TextFile(path: Path): File(path) {
+
+  abstract class TextFile(path: Path) : File(path) {
     val prefix: MutableList<List<String>> = mutableListOf()
-    
+
     fun saveTranslationMap(output: Path, list: List<List<String?>>) {
-      workbook { 
+      workbook {
         sheet {
           prefix.forEach { prefixRow ->
             row {
@@ -67,8 +70,8 @@ class SRPG(
           }
         }
       }.write(output.resolve("${path.nameWithoutExtension}.xlsx").toString())
-    } 
-    
+    }
+
     fun getTranslationMap(tablePath: Path): Map<String, String> {
       val translationMap = mutableMapOf<String, String>()
       val xlsxPath = tablePath.resolve("${path.nameWithoutExtension}.xlsx")
@@ -78,11 +81,12 @@ class SRPG(
       val workbook = XSSFWorkbook(xlsxPath.inputStream())
       val sheet = workbook.getSheetAt(0)
       val firstRow = sheet.getRow(0)
-      val saver: (List<String?>) -> Unit = if (firstRow != null && firstRow.getCell(0).stringCellValue.startsWith("fvlaenix-magic-words")) {
-        { translationMap[it[0]!!.trim()] = it[2]!!.trim() }
-      } else {
-        { translationMap[it[0]!!.trim()] = it[1]!!.trim() }
-      }
+      val saver: (List<String?>) -> Unit =
+        if (firstRow != null && firstRow.getCell(0).stringCellValue.startsWith("fvlaenix-magic-words")) {
+          { translationMap[it[0]!!.trim()] = it[2]!!.trim() }
+        } else {
+          { translationMap[it[0]!!.trim()] = it[1]!!.trim() }
+        }
       sheet.toList().forEachIndexed { indexRow, row ->
         val cells = (0..<row.lastCellNum).map { row.getCell(it)?.stringCellValue }
         when (cells.size) {
@@ -96,8 +100,8 @@ class SRPG(
       return translationMap
     }
   }
-  
-  open class Json(path: Path): TextFile(path) {
+
+  open class Json(path: Path) : TextFile(path) {
     override fun createTranslationTables(output: Path) {
       val objectMapper = ObjectMapper()
       val translationMap = getTranslationMap(output)
@@ -108,8 +112,26 @@ class SRPG(
         jsonNode["name"]?.let { toTranslate.add(Pair(it.asText(), translationMap[it.asText()])) }
         jsonNode["desc"]?.let { toTranslate.add(Pair(it.asText(), translationMap[it.asText()])) }
         jsonNode["mapName"]?.let { toTranslate.add(Pair(it.asText(), translationMap[it.asText()])) }
-        jsonNode["victories"]?.let { node -> (node as ArrayNode).forEach { toTranslate.add(Pair(it.asText(), translationMap[it.asText()])) } }
-        jsonNode["defeats"]?.let { node -> (node as ArrayNode).forEach { toTranslate.add(Pair(it.asText(), translationMap[it.asText()])) } }
+        jsonNode["victories"]?.let { node ->
+          (node as ArrayNode).forEach {
+            toTranslate.add(
+              Pair(
+                it.asText(),
+                translationMap[it.asText()]
+              )
+            )
+          }
+        }
+        jsonNode["defeats"]?.let { node ->
+          (node as ArrayNode).forEach {
+            toTranslate.add(
+              Pair(
+                it.asText(),
+                translationMap[it.asText()]
+              )
+            )
+          }
+        }
       }
       saveTranslationMap(output, toTranslate.map { listOf(it.first, it.second) })
     }
@@ -127,15 +149,18 @@ class SRPG(
             ?: throw IllegalStateException("Can't find translation for ${this.asText()} in json $path")
           return TextNode(translation)
         }
+
         fun JsonNode.translateAsArrayNodeWithTexts(): ArrayNode {
           check(this is ArrayNode) { "In json $path node is not array" }
           val newArrayNode = objectMapper.createArrayNode()
           this.forEach { newArrayNode.add(it.translateAsTextNode()) }
           return newArrayNode
         }
+
         fun ObjectNode.replaceTextNode(name: String) {
           if (this[name] != null) this.replace(name, this[name].translateAsTextNode())
         }
+
         fun ObjectNode.replaceArrayNode(name: String) {
           if (this[name] != null) this.replace(name, this[name].translateAsArrayNodeWithTexts())
         }
@@ -148,18 +173,18 @@ class SRPG(
       objectMapper.writer().writeValue(output.resolve("${path.fileName}").outputStream(), content)
     }
   }
-  
-  open class EventText(path: Path): TextFile(path) {
-    
+
+  open class EventText(path: Path) : TextFile(path) {
+
     companion object {
       private val SIDES = listOf("Top", "Bottom", "Right", "Left", "Center", "Middle", "None", "Information", "1")
       private val SYSTEM_DIALOG_REGEX = "<\\(\\d+\\)([\\p{script=Han}\\w]+)@\\d+>".toRegex()
     }
-    
+
     private class EventTextRow(val name: String, val toTranslate: String, val translated: String?) {
       fun toList(): List<String?> = listOf(name, toTranslate, translated)
     }
-    
+
     override fun createTranslationTables(output: Path) {
       prefix.add(listOf("fvlaenix-magic-words", "SRPG", "SRPG"))
       prefix.add(listOf("toTranslate", "name", "translated"))
@@ -175,7 +200,7 @@ class SRPG(
         if (ends.isEmpty()) throw IllegalStateException("Line $index doesn't have side thing in $path")
         val end = ends.single()
         val author = lines[0].substringBeforeLast(end).let { it.substring(0, it.length - 1) }
-        
+
         if (author == "Choice") {
           lines = lines.drop(1)
           lines.forEach { toTranslate.add(EventTextRow(it, author, translationMap[it])) }
@@ -208,7 +233,7 @@ class SRPG(
       val translationMap = getTranslationMap(tables)
       val fullText = path.readText()
       val texts = fullText.split("\r\n\r\n").map { it.trim() }
-      val translatedTexts = texts.mapIndexed { index, block -> 
+      val translatedTexts = texts.mapIndexed { index, block ->
         try {
           val translatedLines = mutableListOf<String>()
           val lines = block.split("\r\n")
@@ -232,7 +257,8 @@ class SRPG(
             translatedLines.add(lines[iter])
             iter++
             while (iter < lines.size) {
-              val translation = translationMap[lines[iter]] ?: throw IllegalStateException("Can't find translation for ${lines[iter]}")
+              val translation =
+                translationMap[lines[iter]] ?: throw IllegalStateException("Can't find translation for ${lines[iter]}")
               translatedLines.add(translation)
               iter++
             }
@@ -283,8 +309,8 @@ class SRPG(
     }
 
   }
-  
-  open class CopyPasteFile(path: Path): TextFile(path) {
+
+  open class CopyPasteFile(path: Path) : TextFile(path) {
     override fun createTranslationTables(output: Path) {
       saveTranslationMap(output, emptyList())
     }
@@ -294,12 +320,12 @@ class SRPG(
     }
 
   }
-  
+
   private fun Folder.eventText(name: String) {
     val eventText = EventText(this.path.resolve(name))
     this.sub.add(eventText)
   }
-  
+
   private fun Folder.eventText(regex: Regex) {
     val listFiles = this.path.listDirectoryEntries().filter { it.name.matches(regex) && !it.isDirectory() }
     listFiles.forEach { path ->
@@ -312,7 +338,7 @@ class SRPG(
     val simpleJson = Json(this.path.resolve(name))
     this.sub.add(simpleJson)
   }
-  
+
   private fun Folder.simpleJson(regex: Regex) {
     val listFiles = this.path.listDirectoryEntries().filter { it.name.matches(regex) && !it.isDirectory() }
     listFiles.forEach { path ->
@@ -326,7 +352,7 @@ class SRPG(
     this.sub.add(folder)
     body(folder)
   }
-  
+
   private fun Folder.copyPasteFile(name: String) {
     val copyPasteFile = CopyPasteFile(this.path.resolve(name))
     this.sub.add(copyPasteFile)
@@ -340,11 +366,11 @@ class SRPG(
       body(folder)
     }
   }
-  
+
   fun createTranslationTables(path: Path) {
     getStructure().forEach { it.createTranslationTables(path) }
   }
-  
+
   fun patchFromTranslationTables(namesService: NamesService, tablesPath: Path, path: Path) {
     getStructure().forEach { it.patchFromTranslationTables(namesService, tablesPath, path) }
   }
@@ -352,10 +378,10 @@ class SRPG(
   companion object {
     private const val COUNT_SYMBOLS_IN_LINE = 50
   }
-  
+
   private fun getStructure(): List<File> {
     val folder = Folder(baseDirectory)
-    return folder.apply { 
+    return folder.apply {
       folder("Base") {
         simpleJson("bonuses.json")
         simpleJson("communication.json")

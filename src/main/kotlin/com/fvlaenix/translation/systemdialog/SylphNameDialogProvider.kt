@@ -3,11 +3,13 @@ package com.fvlaenix.translation.systemdialog
 import com.fvlaenix.translation.NamesService
 import com.fvlaenix.translation.systemdialog.SystemDialogUtils.removeQuotesIfNeeded
 
-class SylphNameDialogProvider(private val namesService: NamesService) : SystemDialogProvider<SylphNameDialogProvider.SylphDialog> {
+class SylphNameDialogProvider(
+  private val namesService: NamesService
+) : SystemDialogProvider<SylphNameDialogProvider.SylphDialog> {
   companion object {
     val REGEX = "\\\\n<([^>]+)>".toRegex()
   }
-  
+
   data class SylphDialog(val name: String) : SystemDialogProvider.SystemDialog {
     override fun returnTransform(s: String): String {
       return "\\n<$name>${removeQuotesIfNeeded(s)}"

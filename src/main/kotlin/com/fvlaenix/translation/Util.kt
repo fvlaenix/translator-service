@@ -5,7 +5,8 @@ object Util {
     val toTranslateBatches = mutableListOf<List<String>>()
     var buffer = mutableListOf<String>(lines.first())
     for (line in lines.drop(1)) {
-      if (buffer.sumOf { it.split("\\s+".toRegex()).count() } + line.split("\\s+".toRegex()).count() > countWordsLimit) {
+      val wordsCount = buffer.sumOf { it.split("\\s+".toRegex()).count() } + line.split("\\s+".toRegex()).count()
+      if (wordsCount > countWordsLimit) {
         toTranslateBatches.add(buffer)
         buffer = mutableListOf()
       }
@@ -16,7 +17,7 @@ object Util {
     }
     return toTranslateBatches
   }
-  
+
   fun splitSymbols(line: String, countSymbolsLimit: Int): List<String> {
     val result = mutableListOf<String>()
     val accumulator = mutableListOf<String>()

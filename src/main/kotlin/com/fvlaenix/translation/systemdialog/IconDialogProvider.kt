@@ -4,7 +4,7 @@ class IconDialogProvider : SystemDialogProvider<IconDialogProvider.IconDialog> {
   companion object {
     val REGEX = "^\\\\{2,4}[I|i]\\[\\d+]\\s*".toRegex()
   }
-  
+
   class IconDialog(private val iconText: String) : SystemDialogProvider.SystemDialog {
     override fun returnTransform(s: String): String {
       return "$iconText$s"

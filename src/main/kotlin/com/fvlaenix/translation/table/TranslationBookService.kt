@@ -25,9 +25,10 @@ class TranslationBookService(
   private val dialogProvider: ProvidersCollection = ProvidersCollection.defaultProvidersCollection(namesService),
   private val translator: Translator = OpenAIGPTTranslator(OpenAIServiceImpl())
 ) {
-  private val books : List<TranslationBook> = FilesUtil.getPaths(path, filter = { it.extension == "xlxs" || it.extension == "xlsx" })
-    .map { TranslationBook(it.inputStream(), path.relativize(it)) }
-  val cache : MutableMap<String, String> = books
+  private val books: List<TranslationBook> =
+    FilesUtil.getPaths(path, filter = { it.extension == "xlxs" || it.extension == "xlsx" })
+      .map { TranslationBook(it.inputStream(), path.relativize(it)) }
+  val cache: MutableMap<String, String> = books
     .flatMap { book -> book.translationBook }
     .filter { it.translate != null }
     .associate { it.toTranslate to it.translate!! }
@@ -131,13 +132,33 @@ class TranslationBookService(
       when (translateData) {
         is TranslationData.TranslationSimpleData -> {
           when (val firstSystem = startResult.system.firstOrNull()) {
-            is Bo10FNameDialogProvider.Bo10FDialog -> DialogTranslation(firstSystem.name, startResult.result, translateData.translate)
-            is ElmiaNameDialogProvider.ElmiaDialog -> DialogTranslation(firstSystem.name, startResult.result, translateData.translate)
-            is SylphNameDialogProvider.SylphDialog -> DialogTranslation(firstSystem.name, startResult.result, translateData.translate)
+            is Bo10FNameDialogProvider.Bo10FDialog -> DialogTranslation(
+              firstSystem.name,
+              startResult.result,
+              translateData.translate
+            )
+
+            is ElmiaNameDialogProvider.ElmiaDialog -> DialogTranslation(
+              firstSystem.name,
+              startResult.result,
+              translateData.translate
+            )
+
+            is SylphNameDialogProvider.SylphDialog -> DialogTranslation(
+              firstSystem.name,
+              startResult.result,
+              translateData.translate
+            )
+
             else -> TextTranslation(startResult.result, translateData.translate)
           }
         }
-        is TranslationData.TranslationDataWithNameData -> DialogTranslation(translateData.name, startResult.result, translateData.translate)
+
+        is TranslationData.TranslationDataWithNameData -> DialogTranslation(
+          translateData.name,
+          startResult.result,
+          translateData.translate
+        )
       }
     }
     val result = try {

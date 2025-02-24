@@ -6,8 +6,8 @@ package com.fvlaenix.translation.translator
  * @property translation The translated text, null if not yet translated
  */
 sealed class Translation(
-    val original: String,
-    var translation: String?
+  val original: String,
+  var translation: String?
 )
 
 /**
@@ -16,8 +16,8 @@ sealed class Translation(
  * @param translation The translated text, null if not yet translated
  */
 class TextTranslation(
-    original: String,
-    translation: String? = null
+  original: String,
+  translation: String? = null
 ) : Translation(original, translation)
 
 /**
@@ -27,9 +27,9 @@ class TextTranslation(
  * @param translation The translated text, null if not yet translated
  */
 class DialogTranslation(
-    val name: String,
-    original: String,
-    translation: String? = null
+  val name: String,
+  original: String,
+  translation: String? = null
 ) : Translation(original, translation)
 
 /**
@@ -37,19 +37,19 @@ class DialogTranslation(
  * Implementations should handle both simple text translations and structured dialog translations.
  */
 interface Translator {
-    /**
-     * Translates a list of texts. Automatically determines whether to use text or JSON-based translation
-     * based on the type of Translation objects.
-     */
-    suspend fun translate(data: List<Translation>): List<Translation>
+  /**
+   * Translates a list of texts. Automatically determines whether to use text or JSON-based translation
+   * based on the type of Translation objects.
+   */
+  suspend fun translate(data: List<Translation>): List<Translation>
 
-    /**
-     * Translates a list of texts using JSON format, suitable for structured data like dialogs
-     */
-    suspend fun translateJson(data: List<Translation>): List<Translation>
+  /**
+   * Translates a list of texts using JSON format, suitable for structured data like dialogs
+   */
+  suspend fun translateJson(data: List<Translation>): List<Translation>
 
-    /**
-     * Translates a list of simple texts
-     */
-    suspend fun translateText(data: List<TextTranslation>): List<TextTranslation>
+  /**
+   * Translates a list of simple texts
+   */
+  suspend fun translateText(data: List<TextTranslation>): List<TextTranslation>
 }

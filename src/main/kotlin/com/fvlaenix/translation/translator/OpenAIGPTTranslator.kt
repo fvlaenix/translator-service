@@ -9,6 +9,9 @@ class OpenAIGPTTranslator(
   private val jsonPrompt: String = OpenAIGPTTranslator::class.java.getResource("/jsonPrompt.txt")!!.readText(),
   private val textPrompt: String = OpenAIGPTTranslator::class.java.getResource("/prompt.txt")!!.readText()
 ) : Translator {
+  companion object {
+    val JSON = Json { ignoreUnknownKeys = true }
+  }
 
   class IncorrectTranslation(message: String?) : Exception(message)
 
@@ -38,7 +41,7 @@ class OpenAIGPTTranslator(
       throw IllegalStateException("Failed to translate: ${e.message}")
     }
 
-    val translations = Json { ignoreUnknownKeys = true }
+    val translations = JSON
       .decodeFromString<List<JsonObject>>(translatedJson)
 
     if (translations.size != untranslated.size) {
