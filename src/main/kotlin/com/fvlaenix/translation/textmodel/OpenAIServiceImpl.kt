@@ -18,12 +18,12 @@ class OpenAIServiceImpl(
     timeout = Timeout(socket = 180.seconds)
   )
 
-  override suspend fun sendRequest(prompt: String, systemMessage: String?): String {
+  override suspend fun sendRequest(data: String, systemMessage: String?): String {
     var attempts = maxRetries
     while (attempts > 0) {
       attempts--
       try {
-        return makeRequest(prompt, systemMessage)
+        return makeRequest(data, systemMessage)
       } catch (e: Exception) {
         if (attempts == 0) throw e
       }
@@ -31,11 +31,11 @@ class OpenAIServiceImpl(
     throw IllegalStateException("Failed to get response after $maxRetries attempts")
   }
 
-  override suspend fun sendBatchRequest(prompts: List<String>, systemMessage: String?): List<String> {
-    return prompts.map { prompt -> sendRequest(prompt, systemMessage) }
+  override suspend fun sendBatchRequest(data: List<String>, systemMessage: String?): List<String> {
+    return data.map { prompt -> sendRequest(prompt, systemMessage) }
   }
 
-  private suspend fun makeRequest(prompt: String, systemMessage: String?): String {
+  private suspend fun makeRequest(data: String, systemMessage: String?): String {
     val messages = buildList {
       if (systemMessage != null) {
         add(
@@ -48,7 +48,7 @@ class OpenAIServiceImpl(
       add(
         ChatMessage(
           role = ChatRole.User,
-          content = prompt
+          content = data
         )
       )
     }
