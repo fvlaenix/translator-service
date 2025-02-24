@@ -101,11 +101,7 @@ class TextModelServiceTranslator(
     val splitInfoMap = mutableMapOf<Int, List<Int>>() // Map<OriginalIndex, SplitCounts>
 
     translations.forEachIndexed { index, translation ->
-      if (textModelService.fractionOfTokenLimit(
-          transformer.transform(listOf(translation)),
-          systemPrompt
-        ) <= TOKEN_LIMIT_FRACTION
-      ) {
+      if (textModelService.fractionOfTokenLimit(transformer.transform(listOf(translation))) <= TOKEN_LIMIT_FRACTION) {
         splitTranslations.add(translation)
       } else {
         val (parts, splitCounts) = splitLargeTranslation(translation, systemPrompt, transformer)
@@ -127,7 +123,7 @@ class TextModelServiceTranslator(
         transformer.transform(currentBatch + translation)
       }
 
-      if (textModelService.fractionOfTokenLimit(potentialString, systemPrompt) <= TOKEN_LIMIT_FRACTION) {
+      if (textModelService.fractionOfTokenLimit(potentialString) <= TOKEN_LIMIT_FRACTION) {
         currentBatch.add(translation)
         currentString = potentialString
       } else {
@@ -138,7 +134,7 @@ class TextModelServiceTranslator(
         }
 
         val singleString = transformer.transform(listOf(translation))
-        if (textModelService.fractionOfTokenLimit(singleString, systemPrompt) <= TOKEN_LIMIT_FRACTION) {
+        if (textModelService.fractionOfTokenLimit(singleString) <= TOKEN_LIMIT_FRACTION) {
           currentBatch.add(translation)
           currentString = singleString
         } else {
@@ -185,8 +181,7 @@ class TextModelServiceTranslator(
       val paragraphTranslation = createTranslationWithText(translation, paragraph)
 
       if (textModelService.fractionOfTokenLimit(
-          transformer.transform(listOf(paragraphTranslation)),
-          systemPrompt
+          transformer.transform(listOf(paragraphTranslation))
         ) <= TOKEN_LIMIT_FRACTION
       ) {
         result.add(paragraphTranslation)
@@ -225,8 +220,7 @@ class TextModelServiceTranslator(
       val potentialTranslation = createTranslationWithText(translation, potentialText)
 
       if (textModelService.fractionOfTokenLimit(
-          transformer.transform(listOf(potentialTranslation)),
-          systemPrompt
+          transformer.transform(listOf(potentialTranslation))
         ) <= TOKEN_LIMIT_FRACTION
       ) {
         currentText = potentialText
@@ -240,7 +234,7 @@ class TextModelServiceTranslator(
         currentSentences = mutableListOf(sentence)
 
         if (textModelService.fractionOfTokenLimit(
-            transformer.transform(listOf(createTranslationWithText(translation, currentText))), systemPrompt
+            transformer.transform(listOf(createTranslationWithText(translation, currentText)))
           ) > TOKEN_LIMIT_FRACTION
         ) {
           throw IllegalStateException("Sentence not fit into context!")
