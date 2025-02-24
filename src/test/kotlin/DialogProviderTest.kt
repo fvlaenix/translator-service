@@ -3,7 +3,7 @@ import com.fvlaenix.translation.systemdialog.*
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
-class TranslationBookServiceTest {
+class DialogProviderTest {
 
   companion object {
     val CLASSIC_NAMES_SERVICE = NamesService(mapOf("a" to "ф", "b" to "б", "name" to "имя"))

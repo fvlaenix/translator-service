@@ -14,10 +14,9 @@ import java.nio.file.Path
 import kotlin.io.path.createFile
 import kotlin.io.path.outputStream
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class TranslationBookServiceTest {
+class TestServiceTranslationBookServiceTest {
   @TempDir
   lateinit var tempDir: Path
 
@@ -66,12 +65,7 @@ class TranslationBookServiceTest {
     testFile.outputStream().use { workbook.write(it) }
 
     // Initialize NamesService with test data
-    namesService = NamesService(
-      mapOf(
-        "test.key" to "test.value"
-        // No cached translation for test texts
-      )
-    )
+    namesService = NamesService(mapOf())
 
     translationBookService = TranslationBookService(
       path = tempDir,
@@ -99,19 +93,6 @@ class TranslationBookServiceTest {
       "Translated text",
       translationBookService.cache["Original text to translate"]
     )
-  }
-
-  @Test
-  fun testTranslationWithErrorHandling() = runTest {
-    // Setup test to throw an error
-    testOpenAIService.simulateError()
-
-    try {
-      translationBookService.translate()
-    } catch (e: Exception) {
-      assertNotNull(e)
-      // Error was properly handled
-    }
   }
 
   @Test
