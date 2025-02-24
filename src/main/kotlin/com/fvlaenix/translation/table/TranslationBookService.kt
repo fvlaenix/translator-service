@@ -2,11 +2,11 @@ package com.fvlaenix.translation.table
 
 import com.fvlaenix.translation.FilesUtil
 import com.fvlaenix.translation.NamesService
-import com.fvlaenix.translation.openai.OpenAIServiceImpl
 import com.fvlaenix.translation.systemdialog.Bo10FNameDialogProvider
 import com.fvlaenix.translation.systemdialog.ElmiaNameDialogProvider
 import com.fvlaenix.translation.systemdialog.ProvidersCollection
 import com.fvlaenix.translation.systemdialog.SylphNameDialogProvider
+import com.fvlaenix.translation.textmodel.OpenAIServiceImpl
 import com.fvlaenix.translation.translator.DialogTranslation
 import com.fvlaenix.translation.translator.OpenAIGPTTranslator
 import com.fvlaenix.translation.translator.TextTranslation

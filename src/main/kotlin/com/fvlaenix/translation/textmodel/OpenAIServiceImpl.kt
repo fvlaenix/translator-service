@@ -1,4 +1,4 @@
-package com.fvlaenix.translation.openai
+package com.fvlaenix.translation.textmodel
 
 import TOKEN
 import com.aallam.openai.api.chat.ChatCompletionRequest

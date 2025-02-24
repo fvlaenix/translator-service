@@ -7,7 +7,6 @@ import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.http.Timeout
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
-import com.fvlaenix.translation.GPTUtil
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
@@ -57,8 +56,61 @@ object GPT {
     throw IllegalStateException()
   }
 
-  suspend fun standardTextRequest(data: List<TextTranslation>): List<TextTranslation> =
-    GPTUtil.translateNew(txtPrompt, "gpt-4-turbo", data)
+  suspend fun standardTextRequest(data: List<TextTranslation>): List<TextTranslation> {
+    val toTranslateWithoutFilter = data.map { TextTranslation(it.original, it.translation) }
+    val toTranslate = toTranslateWithoutFilter.filter { it.translation == null }
+    if (toTranslate.isNotEmpty()) {
+      val response = translate(txtPrompt, "gpt-4-turbo", toTranslate.map { it.original })
+      if (response.size != toTranslate.size) throw IncorrectTranslation("Not matched sizes")
+      toTranslate.zip(response).forEach { (translation1, translation2) ->
+        translation1.translation = translation2
+      }
+    }
+    return toTranslateWithoutFilter
+  }
+
+  suspend fun translate(prompt: String, model: String, lines: List<String>): List<String> {
+    check(model == "gpt-4" || model == "gpt-4-turbo") { "Can't use old API with anything except gpt-4. Found: $model" }
+    val emptyLines = mutableSetOf<Int>()
+    val filteredLines = lines.filterIndexed { index, s ->
+      if (s.isBlank()) {
+        emptyLines.add(index)
+        return@filterIndexed false
+      } else {
+        return@filterIndexed true
+      }
+    }
+    val result = mutableListOf<String>()
+    OpenAI(
+      token = TOKEN,
+      timeout = Timeout(socket = 180.seconds)
+    ).use { openAI ->
+      val systemMessage = ChatMessage(
+        role = ChatRole.System,
+        content = prompt
+      )
+      val translateMessage = ChatMessage(
+        role = ChatRole.User,
+        content = filteredLines.joinToString(separator = "\n")
+      )
+
+      val chatCompletionRequest = ChatCompletionRequest(
+        model = ModelId(model),
+        messages = listOf(systemMessage, translateMessage)
+      )
+
+      val completion = openAI.chatCompletion(chatCompletionRequest)
+      completion.choices.forEach { choice ->
+        result.addAll(choice.message.content!!.split("\n").map { it.trim() })
+      }
+    }
+    result.removeAll { it.isBlank() }
+    if (result.size != filteredLines.size) {
+      throw GPTLinesNotMatchException(lines.size, result.size)
+    }
+    emptyLines.sorted().forEach { result.add(it, "") }
+    return result
+  }
 
   @OptIn(ExperimentalSerializationApi::class)
   suspend fun jsonRequest(model: String, prompt: String, data: List<GPT.Translation>): List<GPT.Translation> {
@@ -149,4 +201,7 @@ object GPT {
     }
     return result
   }
+
+  class GPTLinesNotMatchException(expected: Int, found: Int) :
+    Exception("Count of lines not match in translation. Expected: $expected, found: $found")
 }

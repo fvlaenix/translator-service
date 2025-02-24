@@ -1,4 +1,4 @@
-package com.fvlaenix.translation.openai
+package com.fvlaenix.translation.textmodel
 
 interface TextModelService {
   /**

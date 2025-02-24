@@ -1,6 +1,6 @@
 package com.fvlaenix.translation.translator
 
-import com.fvlaenix.translation.openai.TextModelService
+import com.fvlaenix.translation.textmodel.TextModelService
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 

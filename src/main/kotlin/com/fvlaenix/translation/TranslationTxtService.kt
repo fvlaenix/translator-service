@@ -1,5 +1,7 @@
 package com.fvlaenix.translation
 
+import com.fvlaenix.translation.translator.TextTranslation
+import com.fvlaenix.translation.translator.Translator
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import java.nio.file.Path
@@ -8,7 +10,7 @@ import kotlin.io.path.readLines
 
 class TranslationTxtService(
   path: Path,
-  private val model: String
+  private val translator: Translator
 ) {
 
   companion object {
@@ -16,30 +18,14 @@ class TranslationTxtService(
   }
 
   val text = path.readLines()
-  val prompt = TranslationTxtService::class.java.getResourceAsStream("/prompt_txt.txt")!!.bufferedReader().readText()
 
   suspend fun translate() {
     coroutineScope {
       ensureActive()
-      val toTranslateBatches = Util.splitWords(text, COUNT_WORDS)
-      val maxAttempts = 5
-      for (batch in toTranslateBatches) {
-        var result: List<String>? = null
-        var attempts = 0
-        while (attempts < maxAttempts) {
-          attempts++
-          result = try {
-            GPTUtil.translate(prompt, model, batch)
-          } catch (_: GPTUtil.GPTLinesNotMatchException) {
-            null
-          }
-          if (result != null) break
-        }
-        if (result == null) {
-          return@coroutineScope
-        }
-        Path.of("output.txt").appendLines(result)
-      }
+      val toTranslate = Util.splitWords(text, COUNT_WORDS).flatten()
+      val data = toTranslate.map { TextTranslation(original = it) }
+      translator.translate(data)
+      Path.of("output.txt").appendLines(data.map { it.translation ?: "<FAILED TRANSLATION>" })
     }
   }
 }

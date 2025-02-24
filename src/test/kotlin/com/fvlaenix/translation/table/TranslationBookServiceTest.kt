@@ -1,7 +1,7 @@
 package com.fvlaenix.translation.table
 
 import com.fvlaenix.translation.NamesService
-import com.fvlaenix.translation.openai.TestTextModelService
+import com.fvlaenix.translation.textmodel.TestTextModelService
 import com.fvlaenix.translation.translator.OpenAIGPTTranslator
 import com.fvlaenix.translation.translator.Translator
 import kotlinx.coroutines.ExperimentalCoroutinesApi
