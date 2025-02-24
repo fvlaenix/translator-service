@@ -32,11 +32,11 @@ class OpenAIServiceImpl(
     timeout = Timeout(socket = 180.seconds)
   )
 
-  suspend fun countOfTokens(prompt: String, systemMessage: String?): Int =
-    Tokenizer.of(model).encode((systemMessage ?: "PROMPT") + prompt).count()
+  suspend fun countOfTokens(prompt: String): Int =
+    Tokenizer.of(model).encode(prompt).count()
 
-  override suspend fun fractionOfTokenLimit(prompt: String, systemMessage: String?): Float =
-    countOfTokens(prompt, systemMessage).toFloat() / MODELS[model]!!.maxTokenCount
+  override suspend fun fractionOfTokenLimit(text: String): Float =
+    countOfTokens(text).toFloat() / MODELS[model]!!.maxTokenCount
 
 
   override suspend fun sendRequest(data: String, systemMessage: String?): String {

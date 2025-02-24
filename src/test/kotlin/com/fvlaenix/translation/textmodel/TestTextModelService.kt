@@ -29,7 +29,7 @@ class TestTextModelService : TextModelService {
     errorToThrow = null
   }
 
-  override suspend fun fractionOfTokenLimit(prompt: String, systemMessage: String?): Float =
+  override suspend fun fractionOfTokenLimit(prompt: String): Float =
     0.5f
 
   override suspend fun sendRequest(prompt: String, systemMessage: String?): String {

@@ -20,7 +20,7 @@ class TextModelServiceTranslatorTest {
       lastRequest = prompt
       lastSystemMessage = systemMessage
 
-      if (fractionOfTokenLimit(prompt, systemMessage) > 0.8f) {
+        if (fractionOfTokenLimit(prompt) > 0.8f) {
         throw IllegalArgumentException("Text exceeds token limit fraction")
       }
 
@@ -39,8 +39,8 @@ class TextModelServiceTranslatorTest {
       return prompts.map { sendRequest(it, systemMessage) }
     }
 
-    override suspend fun fractionOfTokenLimit(prompt: String, systemMessage: String?): Float {
-      val totalLength = prompt.length + (systemMessage?.length ?: 0)
+      override suspend fun fractionOfTokenLimit(text: String): Float {
+          val totalLength = text.length
       return totalLength.toFloat() / maxChars
     }
   }
