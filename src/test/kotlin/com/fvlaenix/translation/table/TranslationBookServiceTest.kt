@@ -88,7 +88,7 @@ class TranslationBookServiceTest {
     testOpenAIService.setResponse(
       "Original text to translate",
       "Translated text",
-      textPrompt = OpenAIGPTTranslator::class.java.getResource("/prompt_EN.txt")!!.readText()
+      textPrompt = OpenAIGPTTranslator::class.java.getResource("/prompt.txt")!!.readText()
     )
 
     // Perform translation
@@ -153,7 +153,7 @@ class TranslationBookServiceTest {
     testOpenAIService.setResponse(
       "First text\nSecond text",
       "First translation\nSecond translation",
-      textPrompt = OpenAIGPTTranslator::class.java.getResource("/prompt_EN.txt")!!.readText()
+      textPrompt = OpenAIGPTTranslator::class.java.getResource("/prompt.txt")!!.readText()
     )
 
     // Create service with new file
