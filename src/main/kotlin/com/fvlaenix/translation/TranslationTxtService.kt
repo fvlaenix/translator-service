@@ -6,6 +6,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import java.nio.file.Path
 import kotlin.io.path.appendLines
+import kotlin.io.path.appendText
 import kotlin.io.path.readLines
 
 class TranslationTxtService(
@@ -24,8 +25,10 @@ class TranslationTxtService(
       ensureActive()
       val toTranslate = Util.splitWords(text, COUNT_WORDS).flatten()
       val data = toTranslate.map { TextTranslation(original = it) }
-      translator.translate(data)
-      Path.of("output.txt").appendLines(data.map { it.translation ?: "<FAILED TRANSLATION>" })
+      val newData = translator.translate(data)
+      Path.of("output.txt")
+        .appendLines(newData.map { it.translation ?: "<FAILED TRANSLATION>" })
+        .appendText("\n\n")
     }
   }
 }
