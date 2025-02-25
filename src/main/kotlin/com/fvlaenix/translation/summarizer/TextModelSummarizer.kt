@@ -5,7 +5,7 @@ import com.fvlaenix.translation.textmodel.TextModelService
 class TextModelSummarizer(
   private val textModelService: TextModelService,
   private val maxSummaryLength: Int = 2000,
-  private val summaryPrompt: String = TextModelSummarizer::class.java.getResource("/summaryPrompt.txt")!!.readText()
+  private val summaryPrompt: String = TextModelSummarizer::class.java.getResource("/summarizer-prompt.txt")!!.readText()
 ) : Summarizer {
   private var currentSummary: String = ""
 
