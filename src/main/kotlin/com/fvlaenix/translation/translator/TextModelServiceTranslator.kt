@@ -1,5 +1,6 @@
 package com.fvlaenix.translation.translator
 
+import com.fvlaenix.translation.context.GlobalContext
 import com.fvlaenix.translation.summarizer.NoOpSummarizer
 import com.fvlaenix.translation.summarizer.Summarizer
 import com.fvlaenix.translation.textmodel.TextModelService
@@ -10,6 +11,7 @@ class TextModelServiceTranslator(
   private val textModelService: TextModelService,
   private val jsonPrompt: String = TextModelServiceTranslator::class.java.getResource("/jsonPrompt.txt")!!.readText(),
   private val textPrompt: String = TextModelServiceTranslator::class.java.getResource("/prompt.txt")!!.readText(),
+  private val globalContext: GlobalContext? = null,
   private val summarizer: Summarizer = NoOpSummarizer(),
   private val retries: Int = 3,
 ) : Translator {
@@ -155,18 +157,15 @@ class TextModelServiceTranslator(
     for (batch in batches) {
       val batchString = transformer.transform(batch)
       val summary = summarizer.getCurrentSummary()
-      val systemMessage = if (summary.isNotBlank()) {
-        "$systemPrompt\n\nContext from previous translations (please use it to translate):\n\n$summary"
-      } else {
-        systemPrompt
-      }
+
+      val completeSystemMessage = buildSystemPrompt(systemPrompt, summary)
 
       var translatedBatch: List<Translation>? = null
 
       var retriesLeft = retries
       while (retriesLeft > 0) {
         try {
-          val responseString = textModelService.sendRequest(batchString, systemMessage)
+          val responseString = textModelService.sendRequest(batchString, completeSystemMessage)
 
           translatedBatch = parseResponse(responseString, batch)
           translatedBatches.add(translatedBatch)
@@ -394,5 +393,24 @@ class TextModelServiceTranslator(
     }
 
     return result
+  }
+
+  private fun buildSystemPrompt(systemPrompt: String, summary: String): String {
+    val promptBuilder = StringBuilder(systemPrompt)
+
+    // Adding global context if it exists
+    val globalContextText = globalContext?.getContextText()
+    if (!globalContextText.isNullOrBlank()) {
+      promptBuilder.append("\n\nGlobal Context:\n")
+      promptBuilder.append(globalContextText)
+    }
+
+    // Adding context from summarizer if it's not empty
+    if (summary.isNotBlank()) {
+      promptBuilder.append("\n\nContext from previous translations (please use it to translate):\n\n")
+      promptBuilder.append(summary)
+    }
+
+    return promptBuilder.toString()
   }
 }
