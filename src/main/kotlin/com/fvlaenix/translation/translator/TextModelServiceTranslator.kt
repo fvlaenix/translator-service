@@ -1,5 +1,7 @@
 package com.fvlaenix.translation.translator
 
+import com.fvlaenix.translation.summarizer.NoOpSummarizer
+import com.fvlaenix.translation.summarizer.Summarizer
 import com.fvlaenix.translation.textmodel.TextModelService
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -7,7 +9,8 @@ import kotlinx.serialization.json.JsonObject
 class TextModelServiceTranslator(
   private val textModelService: TextModelService,
   private val jsonPrompt: String = TextModelServiceTranslator::class.java.getResource("/jsonPrompt.txt")!!.readText(),
-  private val textPrompt: String = TextModelServiceTranslator::class.java.getResource("/prompt.txt")!!.readText()
+  private val textPrompt: String = TextModelServiceTranslator::class.java.getResource("/prompt.txt")!!.readText(),
+  private val summarizer: Summarizer = NoOpSummarizer()
 ) : Translator {
   companion object {
     val JSON = Json { ignoreUnknownKeys = true }
@@ -104,7 +107,7 @@ class TextModelServiceTranslator(
       if (textModelService.fractionOfTokenLimit(transformer.transform(listOf(translation))) <= TOKEN_LIMIT_FRACTION) {
         splitTranslations.add(translation)
       } else {
-        val (parts, splitCounts) = splitLargeTranslation(translation, systemPrompt, transformer)
+        val (parts, splitCounts) = splitLargeTranslation(translation, transformer)
 
         splitInfoMap[index] = splitCounts
 
@@ -150,10 +153,21 @@ class TextModelServiceTranslator(
     val translatedBatches = mutableListOf<List<Translation>>()
     for (batch in batches) {
       val batchString = transformer.transform(batch)
-      val responseString = textModelService.sendRequest(batchString, systemPrompt)
+      val summary = summarizer.getCurrentSummary()
+      val systemMessage = if (summary.isNotBlank()) {
+        "$systemPrompt\n\nContext from previous translations (please use it to translate):\n\n$summary"
+      } else {
+        systemPrompt
+      }
+      val responseString = textModelService.sendRequest(batchString, systemMessage)
 
       val translatedBatch = parseResponse(responseString, batch)
       translatedBatches.add(translatedBatch)
+
+      val translatedText = translatedBatch.joinToString("\n") { it.translation ?: "" }
+      if (translatedText.isNotBlank()) {
+        summarizer.updateSummary(translatedText)
+      }
     }
 
     val flatTranslations = translatedBatches.flatten()
@@ -162,7 +176,6 @@ class TextModelServiceTranslator(
 
   private suspend fun splitLargeTranslation(
     translation: Translation,
-    systemPrompt: String,
     transformer: TranslationTransformer
   ): Pair<List<Translation>, List<Int>> {
     val result = mutableListOf<Translation>()
@@ -171,9 +184,9 @@ class TextModelServiceTranslator(
     val paragraphs = translation.original.split("\n\n")
 
     if (paragraphs.size <= 1) {
-      val sentenceSplitResult = splitBySentences(translation, systemPrompt, transformer)
+      val sentenceSplitResult = splitBySentences(translation, transformer)
       result.addAll(sentenceSplitResult.first)
-      splitCounts.add(sentenceSplitResult.second) // Добавляем количество частей
+      splitCounts.add(sentenceSplitResult.second) // Adding the number of parts
       return result to splitCounts
     }
 
@@ -185,11 +198,11 @@ class TextModelServiceTranslator(
         ) <= TOKEN_LIMIT_FRACTION
       ) {
         result.add(paragraphTranslation)
-        splitCounts.add(1) // Этот абзац не разбивался
+        splitCounts.add(1) // This paragraph was not split
       } else {
-        val sentenceSplitResult = splitBySentences(paragraphTranslation, systemPrompt, transformer)
+        val sentenceSplitResult = splitBySentences(paragraphTranslation, transformer)
         result.addAll(sentenceSplitResult.first)
-        splitCounts.add(sentenceSplitResult.second) // Добавляем количество частей для этого абзаца
+        splitCounts.add(sentenceSplitResult.second) // Adding the number of parts for this paragraph
       }
     }
 
@@ -198,7 +211,6 @@ class TextModelServiceTranslator(
 
   private suspend fun splitBySentences(
     translation: Translation,
-    systemPrompt: String,
     transformer: TranslationTransformer
   ): Pair<List<Translation>, Int> {
     val result = mutableListOf<Translation>()
