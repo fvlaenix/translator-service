@@ -1,4 +1,5 @@
 import com.fvlaenix.translation.TranslationTxtService
+import com.fvlaenix.translation.context.FileGlobalContext
 import com.fvlaenix.translation.summarizer.TextModelSummarizer
 import com.fvlaenix.translation.textmodel.OpenAIServiceImpl
 import com.fvlaenix.translation.translator.TextModelServiceTranslator
@@ -10,10 +11,14 @@ suspend fun main(args: Array<String>) {
   }
   val path = Path.of(args[0])
   val textModel = OpenAIServiceImpl()
+
+  val context = FileGlobalContext("context.txt")
+
   val translationTxtService = TranslationTxtService(
     path = path,
     translator = TextModelServiceTranslator(
       textModel,
+      globalContext = context,
       summarizer = TextModelSummarizer(textModel)
     )
   )
