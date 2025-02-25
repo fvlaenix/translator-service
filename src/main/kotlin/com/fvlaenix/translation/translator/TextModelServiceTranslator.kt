@@ -10,7 +10,8 @@ class TextModelServiceTranslator(
   private val textModelService: TextModelService,
   private val jsonPrompt: String = TextModelServiceTranslator::class.java.getResource("/jsonPrompt.txt")!!.readText(),
   private val textPrompt: String = TextModelServiceTranslator::class.java.getResource("/prompt.txt")!!.readText(),
-  private val summarizer: Summarizer = NoOpSummarizer()
+  private val summarizer: Summarizer = NoOpSummarizer(),
+  private val retries: Int = 3,
 ) : Translator {
   companion object {
     val JSON = Json { ignoreUnknownKeys = true }
@@ -159,12 +160,24 @@ class TextModelServiceTranslator(
       } else {
         systemPrompt
       }
-      val responseString = textModelService.sendRequest(batchString, systemMessage)
 
-      val translatedBatch = parseResponse(responseString, batch)
-      translatedBatches.add(translatedBatch)
+      var translatedBatch: List<Translation>? = null
 
-      val translatedText = translatedBatch.joinToString("\n") { it.translation ?: "" }
+      var retriesLeft = retries
+      while (retriesLeft > 0) {
+        try {
+          val responseString = textModelService.sendRequest(batchString, systemMessage)
+
+          translatedBatch = parseResponse(responseString, batch)
+          translatedBatches.add(translatedBatch)
+          break
+        } catch (e: Exception) {
+          retriesLeft--
+          if (retriesLeft == 0) throw e
+        }
+      }
+
+      val translatedText = translatedBatch!!.joinToString("\n") { it.translation ?: "" }
       if (translatedText.isNotBlank()) {
         summarizer.updateSummary(translatedText)
       }
