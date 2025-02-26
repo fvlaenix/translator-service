@@ -9,9 +9,9 @@ import java.io.Closeable
 /**
  * Reviewer that uses a language model to evaluate translation quality
  */
-class TextModelReviewer(
+class JsonTextModelReviewer(
   private val textModelService: TextModelService,
-  private val reviewerPrompt: String = TextModelReviewer::class.java.getResource("/reviewer-prompt.txt")?.readText()
+  private val reviewerPrompt: String = JsonTextModelReviewer::class.java.getResource("/reviewer-prompt.txt")?.readText()
     ?: throw IllegalStateException("Cannot load reviewer prompt"),
   private val maxRetries: Int = 3
 ) : Reviewer, Closeable {
