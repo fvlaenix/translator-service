@@ -57,15 +57,17 @@ class OpenAIServiceImpl(
     }
   }
 
-  data class ModelInfo(val name: String, val maxTokenCount: Int)
+  data class ModelInfo(val name: String, val maxTokenCount: Int, val supportsSystem: Boolean)
 
   init {
-    assert(MODELS.containsKey(model)) { "Model $model does not exist in database" }
+    check(MODELS.containsKey(model)) { "Model $model does not exist in database" }
   }
 
   companion object {
     val MODELS = mapOf(
-      "gpt-4-turbo" to ModelInfo("gpt-4-turbo", 4096)
+      "gpt-4-turbo" to ModelInfo("gpt-4-turbo", 4096, true),
+      "o1" to ModelInfo("o1", 100000, false),
+      "o1-mini" to ModelInfo("o1-mini", 65536, false)
     )
   }
 
@@ -102,7 +104,7 @@ class OpenAIServiceImpl(
       if (systemMessage != null) {
         add(
           ChatMessage(
-            role = ChatRole.System,
+            role = if (MODELS[model]!!.supportsSystem) ChatRole.System else ChatRole.User,
             content = systemMessage
           )
         )
