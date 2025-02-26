@@ -15,7 +15,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import java.nio.file.Path
 import kotlin.io.path.inputStream
-import kotlin.io.path.writeLines
 
 class TranslationBookService(
   path: Path,
@@ -190,8 +189,8 @@ class TranslationBookService(
       notFoundKeys.addAll(book.checkNames(dialogProvider))
     }
     if (notFoundKeys.isNotEmpty()) {
-      Path.of("output.txt").writeLines(notFoundKeys.distinct())
-      throw IllegalStateException("A lot of keys not found. All written to output.txt")
+      System.err.println(notFoundKeys.distinct().joinToString("\n"))
+      throw IllegalStateException("A lot of keys not found. All written to err")
     }
   }
 
