@@ -1,7 +1,6 @@
 package com.fvlaenix.translation.agent
 
 import com.fvlaenix.translation.textmodel.TextModelService
-import java.io.Closeable
 
 /**
  * Abstract class for agents working with text models.
@@ -14,7 +13,7 @@ import java.io.Closeable
 abstract class AbstractTextModelAgent(
   protected val textModelService: TextModelService,
   protected val maxRetries: Int = 3
-) : Closeable {
+) {
 
   /**
    * Processes text using the text model and returns the result.
@@ -85,16 +84,5 @@ abstract class AbstractTextModelAgent(
     promptBuilder.append(text)
 
     return promptBuilder.toString()
-  }
-
-  /**
-   * Closes resources used by the agent.
-   * In particular, if TextModelService implements Closeable,
-   * its close() method will be called.
-   */
-  override fun close() {
-    if (textModelService is Closeable) {
-      textModelService.close()
-    }
   }
 }

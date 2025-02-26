@@ -73,7 +73,7 @@ class OpenAIServiceImpl(
 
   private val openAI = OpenAI(
     token = TOKEN,
-    timeout = Timeout(socket = 180.seconds)
+    timeout = Timeout(socket = 1200.seconds)
   )
 
   suspend fun countOfTokens(prompt: String): Int =
