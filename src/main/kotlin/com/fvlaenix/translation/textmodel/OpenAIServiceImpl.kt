@@ -6,7 +6,9 @@ import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.chat.ChatRole
 import com.aallam.openai.api.http.Timeout
+import com.aallam.openai.api.logging.LogLevel
 import com.aallam.openai.api.model.ModelId
+import com.aallam.openai.client.LoggingConfig
 import com.aallam.openai.client.OpenAI
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -72,6 +74,7 @@ class OpenAIServiceImpl(
   }
 
   private val openAI = OpenAI(
+    logging = LoggingConfig(LogLevel.None),
     token = TOKEN,
     timeout = Timeout(socket = 1200.seconds)
   )
