@@ -235,7 +235,7 @@ class TextModelServiceTranslatorTest {
         assertEquals(1, result.size)
         assertTrue(result[0].translation!!.contains("translated:"))
       } catch (e: Exception) {
-        assertTrue(e is IllegalArgumentException || e is TextModelServiceTranslator.IncorrectTranslation)
+        assertTrue(e is IllegalStateException || e is TextModelServiceTranslator.IncorrectTranslation)
       }
     }
 
