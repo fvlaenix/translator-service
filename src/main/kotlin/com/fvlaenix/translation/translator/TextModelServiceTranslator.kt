@@ -10,6 +10,7 @@ import kotlinx.serialization.json.JsonObject
 
 class TextModelServiceTranslator(
   private val textModelService: TextModelService,
+  private val textSplitter: TextSplitter = TextSplitter(textModelService),
   private val jsonPrompt: String = TextModelServiceTranslator::class.java.getResource("/jsonPrompt.txt")!!.readText(),
   private val textPrompt: String = TextModelServiceTranslator::class.java.getResource("/prompt.txt")!!.readText(),
   private val globalContext: GlobalContext? = null,
@@ -19,9 +20,6 @@ class TextModelServiceTranslator(
   companion object {
     val JSON = Json { ignoreUnknownKeys = true }
   }
-
-  // Create the text splitter
-  private val textSplitter = TextSplitter(textModelService)
 
   class IncorrectTranslation(message: String?) : Exception(message)
 

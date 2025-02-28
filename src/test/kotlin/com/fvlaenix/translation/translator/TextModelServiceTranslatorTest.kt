@@ -53,7 +53,7 @@ class TextModelServiceTranslatorTest {
   @BeforeEach
   fun setUp() {
     mockService = MockTextModelService(100)
-    translator = TextModelServiceTranslator(mockService, jsonPrompt, textPrompt)
+    translator = TextModelServiceTranslator(mockService, jsonPrompt = jsonPrompt, textPrompt = textPrompt)
   }
 
   @Nested
@@ -195,7 +195,8 @@ class TextModelServiceTranslatorTest {
     @Test
     fun `test very big context`() = runBlocking {
       val richContextModel = MockTextModelService(800)
-      val richContextTranslator = TextModelServiceTranslator(richContextModel, jsonPrompt, textPrompt)
+      val richContextTranslator =
+        TextModelServiceTranslator(richContextModel, jsonPrompt = jsonPrompt, textPrompt = textPrompt)
       val translations = listOf(
         DialogTranslation("Narrator", "Narrator text"),
         DialogTranslation("Alice", "Hello there!"),
@@ -242,7 +243,8 @@ class TextModelServiceTranslatorTest {
     @Test
     fun `test with text near token limit`() = runBlocking {
       val largerMockService = MockTextModelService(500)
-      val newTranslator = TextModelServiceTranslator(largerMockService, jsonPrompt, textPrompt)
+      val newTranslator =
+        TextModelServiceTranslator(largerMockService, jsonPrompt = jsonPrompt, textPrompt = textPrompt)
 
       val nearLimitText = "a".repeat(350)
       val translations = listOf(
@@ -261,7 +263,8 @@ class TextModelServiceTranslatorTest {
     @Test
     fun `test correct paragraph splitting and merging`() = runBlocking {
       val strictMockService = MockTextModelService(50)
-      val strictTranslator = TextModelServiceTranslator(strictMockService, jsonPrompt, textPrompt)
+      val strictTranslator =
+        TextModelServiceTranslator(strictMockService, jsonPrompt = jsonPrompt, textPrompt = textPrompt)
 
       val paragraphText =
         "First paragraph with content.\n\nSecond paragraph with more content.\n\nThird paragraph with even more content."
@@ -288,7 +291,8 @@ class TextModelServiceTranslatorTest {
     @Test
     fun `test correct sentence splitting and merging`() = runBlocking {
       val strictMockService = MockTextModelService(50)
-      val strictTranslator = TextModelServiceTranslator(strictMockService, jsonPrompt, textPrompt)
+      val strictTranslator =
+        TextModelServiceTranslator(strictMockService, jsonPrompt = jsonPrompt, textPrompt = textPrompt)
 
       val sentenceText = "This is the first sentence. This is the second sentence. This is the third sentence."
       val translations = listOf(
@@ -308,7 +312,8 @@ class TextModelServiceTranslatorTest {
     @Test
     fun `test multiple translations requiring multiple splits`() = runBlocking {
       val strictMockService = MockTextModelService(60)
-      val strictTranslator = TextModelServiceTranslator(strictMockService, jsonPrompt, textPrompt)
+      val strictTranslator =
+        TextModelServiceTranslator(strictMockService, jsonPrompt = jsonPrompt, textPrompt = textPrompt)
 
       val translations = listOf(
         TextTranslation("First long sentence that needs splitting. Second part of the first."),
