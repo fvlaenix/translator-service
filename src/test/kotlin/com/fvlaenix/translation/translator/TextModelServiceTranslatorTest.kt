@@ -332,5 +332,51 @@ class TextModelServiceTranslatorTest {
       assertTrue(secondTranslation.contains("translated:") && secondTranslation.contains("Another long"))
       assertTrue(secondTranslation.contains("More content"))
     }
+
+    @Test
+    fun `test translation of text with newline`() = runBlocking {
+      val mockServiceForNewlines = MockTextModelService(200)
+
+      val translatorWithNewlines = TextModelServiceTranslator(
+        mockServiceForNewlines,
+        jsonPrompt = jsonPrompt,
+        textPrompt = textPrompt
+      )
+
+      val textWithNewline = "Hello 1\nHello 2"
+
+      val translations = listOf(
+        TextTranslation(textWithNewline)
+      )
+
+      val result = translatorWithNewlines.translateText(translations)
+
+      assertEquals(1, result.size)
+      assertTrue(result[0].translation!!.contains("translated: Hello 1"))
+      assertTrue(result[0].translation!!.contains("translated: Hello 2"))
+    }
+
+    @Test
+    fun `test translation of text with newlines`() = runBlocking {
+      val mockServiceForNewlines = MockTextModelService(200)
+
+      val translatorWithNewlines = TextModelServiceTranslator(
+        mockServiceForNewlines,
+        jsonPrompt = jsonPrompt,
+        textPrompt = textPrompt
+      )
+
+      val textWithNewline = "Hello 1\n\nHello 2"
+
+      val translations = listOf(
+        TextTranslation(textWithNewline)
+      )
+
+      val result = translatorWithNewlines.translateText(translations)
+
+      assertEquals(1, result.size)
+      assertTrue(result[0].translation!!.contains("translated: Hello 1"))
+      assertTrue(result[0].translation!!.contains("translated: Hello 2"))
+    }
   }
 }

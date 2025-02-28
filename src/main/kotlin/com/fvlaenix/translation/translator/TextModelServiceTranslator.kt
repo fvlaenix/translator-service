@@ -147,16 +147,51 @@ class TextModelServiceTranslator(
 
   private fun parseResponse(response: String, originalBatch: List<Translation>): List<Translation> {
     return if (originalBatch.all { it is TextTranslation }) {
-      val lines = response.split("\n").map { it.trim() }
-      if (lines.size != originalBatch.size) {
-        throw IncorrectTranslation("Response size mismatch: expected ${originalBatch.size}, got ${lines.size}")
-      }
-
-      originalBatch.mapIndexed { index, translation ->
-        TextTranslation(
-          original = translation.original,
-          translation = lines[index]
+      if (originalBatch.size == 1) {
+        listOf(
+          TextTranslation(
+            original = originalBatch[0].original,
+            translation = response.trim()
+          )
         )
+      } else {
+        val originalNonEmptyLineCounts = originalBatch.map { translation ->
+          translation.original.split("\n").count { it.trim().isNotEmpty() }
+        }
+
+        val responseLines = response.split("\n")
+        val translations = mutableListOf<Translation>()
+
+        var currentLine = 0
+
+        for (i in originalBatch.indices) {
+          val original = originalBatch[i]
+          val expectedNonEmptyLines = originalNonEmptyLineCounts[i]
+
+          val translatedLineStart = currentLine
+          var nonEmptyCount = 0
+
+          while (currentLine < responseLines.size && nonEmptyCount < expectedNonEmptyLines) {
+            if (responseLines[currentLine].trim().isNotEmpty()) {
+              nonEmptyCount++
+            }
+            currentLine++
+          }
+
+          if (nonEmptyCount < expectedNonEmptyLines) {
+            throw IncorrectTranslation("Not enough non-empty lines in response for item $i")
+          }
+
+          val translatedText = responseLines.subList(translatedLineStart, currentLine).joinToString("\n")
+          translations.add(
+            TextTranslation(
+              original = original.original,
+              translation = translatedText
+            )
+          )
+        }
+
+        translations
       }
     } else {
       try {
