@@ -45,7 +45,7 @@ class TextReviewService(
   suspend fun processText(text: String, context: String? = null) = coroutineScope {
     // Initialize output directory
     val currentOutputDirectory =
-      outputDirectory.resolve(LocalTime.now().format(DateTimeFormatter.ofPattern("HH-mm-ss")))
+      outputDirectory.resolve(LocalTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")))
     currentOutputDirectory.createDirectories()
 
     // Split text into chunks
