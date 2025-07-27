@@ -10,3 +10,11 @@ plugins {
 }
 
 rootProject.name = "translator-service"
+
+include(
+    "core",
+    "translation",
+    "games",
+    "review",
+    "server"
+)
