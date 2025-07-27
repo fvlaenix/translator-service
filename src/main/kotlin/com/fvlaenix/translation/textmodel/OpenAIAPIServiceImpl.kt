@@ -19,11 +19,11 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import kotlin.time.Duration.Companion.seconds
 
-class OpenAIServiceImpl(
+class OpenAIAPIServiceImpl(
   private val model: String = "gpt-4-turbo",
   private val maxRetries: Int = 3,
-  // TODO stupid way
-  private val isLogEnabled: Boolean = OpenAIServiceImpl::class.java.getResourceAsStream("/isLogEnabled.txt") != null
+  // TODO remove stupid way
+  private val isLogEnabled: Boolean = OpenAIAPIServiceImpl::class.java.getResourceAsStream("/isLogEnabled.txt") != null
 ) : TextModelService, Closeable {
   private val logBaseDir = File("ai_logs").apply {
     if (!exists()) mkdirs()
@@ -128,7 +128,7 @@ class OpenAIServiceImpl(
     val content = completion.choices[0].message.content
     logRequest(systemMessage ?: "<null>", data, content ?: "<null>")
     return content
-      ?: throw IllegalStateException("Received null response from OpenAI")
+      ?: throw IllegalStateException("Received null response")
   }
 
   override fun close() {

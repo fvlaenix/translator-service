@@ -1,7 +1,7 @@
 import com.fvlaenix.translation.TranslationTxtService
 import com.fvlaenix.translation.context.FileGlobalContext
 import com.fvlaenix.translation.summarizer.TextModelSummarizer
-import com.fvlaenix.translation.textmodel.OpenAIServiceImpl
+import com.fvlaenix.translation.textmodel.OpenAIAPIServiceImpl
 import com.fvlaenix.translation.translator.TextModelServiceTranslator
 import java.nio.file.Path
 
@@ -10,7 +10,7 @@ suspend fun main(args: Array<String>) {
     println("Arguments: <path_to_txt>")
   }
   val path = Path.of(args[0])
-  val textModel = OpenAIServiceImpl()
+  val textModel = OpenAIAPIServiceImpl()
 
   val context = FileGlobalContext("context.txt")
 
