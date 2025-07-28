@@ -1,5 +1,6 @@
 package com.fvlaenix.translation.translator
 
+import com.fvlaenix.translation.context.CharacterContext
 import com.fvlaenix.translation.context.GlobalContext
 import com.fvlaenix.translation.splitter.TextSplitter
 import com.fvlaenix.translation.summarizer.NoOpSummarizer
@@ -14,6 +15,7 @@ class TextModelServiceTranslator(
   private val jsonPrompt: String = TextModelServiceTranslator::class.java.getResource("/jsonPrompt.txt")!!.readText(),
   private val textPrompt: String = TextModelServiceTranslator::class.java.getResource("/prompt.txt")!!.readText(),
   private val globalContext: GlobalContext? = null,
+  private val characterContexts: List<CharacterContext> = emptyList(),
   private val summarizer: Summarizer = NoOpSummarizer(),
   private val retries: Int = 3,
 ) : Translator {
@@ -116,7 +118,7 @@ class TextModelServiceTranslator(
       val batchString = transformer.transform(batch)
       val summary = summarizer.getCurrentSummary()
 
-      val completeSystemMessage = buildSystemPrompt(systemPrompt, summary)
+      val completeSystemMessage = buildSystemPrompt(systemPrompt, summary, batch)
 
       var translatedBatch: List<Translation>? = null
 
@@ -224,7 +226,7 @@ class TextModelServiceTranslator(
     }
   }
 
-  private fun buildSystemPrompt(systemPrompt: String, summary: String): String {
+  private fun buildSystemPrompt(systemPrompt: String, summary: String, translations: List<Translation>): String {
     val promptBuilder = StringBuilder(systemPrompt)
 
     // Adding global context if it exists
@@ -232,6 +234,14 @@ class TextModelServiceTranslator(
     if (!globalContextText.isNullOrBlank()) {
       promptBuilder.append("\n\nGlobal Context:\n")
       promptBuilder.append(globalContextText)
+    }
+
+    val applicableContexts =
+      characterContexts.filter { it.shouldIncludeContext(translations) }
+    if (applicableContexts.isNotEmpty()) {
+      val contextText = applicableContexts.joinToString("\n\n") { it.getContextText() }
+      promptBuilder.append("\n\nContext:\n")
+      promptBuilder.append(contextText)
     }
 
     // Adding context from summarizer if it's not empty
