@@ -46,14 +46,13 @@ class TextModelServiceTranslatorTest {
   }
 
   private lateinit var mockService: MockTextModelService
-  private lateinit var translator: TextModelServiceTranslator
+  private lateinit var translator: AbstractTextModelTranslator
   private val textPrompt = ""
-  private val jsonPrompt = ""
 
   @BeforeEach
   fun setUp() {
     mockService = MockTextModelService(100)
-    translator = TextModelServiceTranslator(mockService, jsonPrompt = jsonPrompt, textPrompt = textPrompt)
+    translator = TextModelTranslator(mockService, textPrompt = textPrompt)
   }
 
   @Nested
@@ -65,7 +64,7 @@ class TextModelServiceTranslatorTest {
         TextTranslation("Short text 2")
       )
 
-      val result = translator.translateText(translations)
+      val result = translator.translate(translations)
 
       assertEquals(2, result.size)
       assertTrue(result[0].translation!!.contains("translated: Short text 1"))
@@ -79,7 +78,7 @@ class TextModelServiceTranslatorTest {
         TextTranslation(longText)
       )
 
-      val result = translator.translateText(translations)
+      val result = translator.translate(translations)
 
       assertEquals(1, result.size)
       assertTrue(result[0].translation!!.contains("translated:"))
@@ -97,7 +96,7 @@ class TextModelServiceTranslatorTest {
         TextTranslation(longSentence)
       )
 
-      val result = translator.translateText(translations)
+      val result = translator.translate(translations)
 
       assertEquals(1, result.size)
       assertTrue(result[0].translation!!.contains("translated:"))
@@ -116,7 +115,7 @@ class TextModelServiceTranslatorTest {
         TextTranslation("Short text 2")
       )
 
-      val result = translator.translateText(translations)
+      val result = translator.translate(translations)
 
       assertEquals(3, result.size)
       assertTrue(result[0].translation!!.contains("translated: Short text 1"))
@@ -134,7 +133,7 @@ class TextModelServiceTranslatorTest {
         TextTranslation("Short text 3", "Already translated 3")
       )
 
-      val result = translator.translateText(translations)
+      val result = translator.translate(translations)
 
       assertEquals(3, result.size)
       assertEquals("Already translated 1", result[0].translation)
@@ -152,7 +151,7 @@ class TextModelServiceTranslatorTest {
         DialogTranslation("Bob", "I'm fine, thank you!")
       )
 
-      val result = translator.translateJson(translations)
+      val result = translator.translate(translations)
 
       assertEquals(2, result.size)
       assertTrue(result[0].translation!!.contains("translated: Hello"))
@@ -168,7 +167,7 @@ class TextModelServiceTranslatorTest {
         DialogTranslation("Character", longDialog)
       )
 
-      val result = translator.translateJson(translations)
+      val result = translator.translate(translations)
 
       assertEquals(1, result.size)
       assertTrue(result[0].translation!!.contains("translated:"))
@@ -196,7 +195,7 @@ class TextModelServiceTranslatorTest {
     fun `test very big context`() = runBlocking {
       val richContextModel = MockTextModelService(800)
       val richContextTranslator =
-        TextModelServiceTranslator(richContextModel, jsonPrompt = jsonPrompt, textPrompt = textPrompt)
+        TextModelTranslator(richContextModel, textPrompt = textPrompt)
       val translations = listOf(
         DialogTranslation("Narrator", "Narrator text"),
         DialogTranslation("Alice", "Hello there!"),
@@ -232,11 +231,11 @@ class TextModelServiceTranslatorTest {
       )
 
       try {
-        val result = translator.translateText(translations)
+        val result = translator.translate(translations)
         assertEquals(1, result.size)
         assertTrue(result[0].translation!!.contains("translated:"))
       } catch (e: Exception) {
-        assertTrue(e is IllegalStateException || e is TextModelServiceTranslator.IncorrectTranslation)
+        assertTrue(e is IllegalStateException || e is AbstractTextModelTranslator.IncorrectTranslation)
       }
     }
 
@@ -244,14 +243,14 @@ class TextModelServiceTranslatorTest {
     fun `test with text near token limit`() = runBlocking {
       val largerMockService = MockTextModelService(500)
       val newTranslator =
-        TextModelServiceTranslator(largerMockService, jsonPrompt = jsonPrompt, textPrompt = textPrompt)
+        TextModelTranslator(largerMockService, textPrompt = textPrompt)
 
       val nearLimitText = "a".repeat(350)
       val translations = listOf(
         TextTranslation(nearLimitText)
       )
 
-      val result = newTranslator.translateText(translations)
+      val result = newTranslator.translate(translations)
 
       assertEquals(1, result.size)
       assertTrue(result[0].translation!!.contains("translated:"))
@@ -264,7 +263,7 @@ class TextModelServiceTranslatorTest {
     fun `test correct paragraph splitting and merging`() = runBlocking {
       val strictMockService = MockTextModelService(50)
       val strictTranslator =
-        TextModelServiceTranslator(strictMockService, jsonPrompt = jsonPrompt, textPrompt = textPrompt)
+        TextModelTranslator(strictMockService, textPrompt = textPrompt)
 
       val paragraphText =
         "First paragraph with content.\n\nSecond paragraph with more content.\n\nThird paragraph with even more content."
@@ -272,7 +271,7 @@ class TextModelServiceTranslatorTest {
         TextTranslation(paragraphText)
       )
 
-      val result = strictTranslator.translateText(translations)
+      val result = strictTranslator.translate(translations)
 
       assertEquals(1, result.size)
       val translation = result[0].translation ?: ""
@@ -292,14 +291,14 @@ class TextModelServiceTranslatorTest {
     fun `test correct sentence splitting and merging`() = runBlocking {
       val strictMockService = MockTextModelService(50)
       val strictTranslator =
-        TextModelServiceTranslator(strictMockService, jsonPrompt = jsonPrompt, textPrompt = textPrompt)
+        TextModelTranslator(strictMockService, textPrompt = textPrompt)
 
       val sentenceText = "This is the first sentence. This is the second sentence. This is the third sentence."
       val translations = listOf(
         TextTranslation(sentenceText)
       )
 
-      val result = strictTranslator.translateText(translations)
+      val result = strictTranslator.translate(translations)
 
       assertEquals(1, result.size)
       val translation = result[0].translation ?: ""
@@ -313,14 +312,14 @@ class TextModelServiceTranslatorTest {
     fun `test multiple translations requiring multiple splits`() = runBlocking {
       val strictMockService = MockTextModelService(60)
       val strictTranslator =
-        TextModelServiceTranslator(strictMockService, jsonPrompt = jsonPrompt, textPrompt = textPrompt)
+        TextModelTranslator(strictMockService, textPrompt = textPrompt)
 
       val translations = listOf(
         TextTranslation("First long sentence that needs splitting. Second part of the first."),
         TextTranslation("Another long sentence that also needs splitting. More content here.")
       )
 
-      val result = strictTranslator.translateText(translations)
+      val result = strictTranslator.translate(translations)
 
       assertEquals(2, result.size)
 
@@ -337,9 +336,8 @@ class TextModelServiceTranslatorTest {
     fun `test translation of text with newline`() = runBlocking {
       val mockServiceForNewlines = MockTextModelService(200)
 
-      val translatorWithNewlines = TextModelServiceTranslator(
+      val translatorWithNewlines = TextModelTranslator(
         mockServiceForNewlines,
-        jsonPrompt = jsonPrompt,
         textPrompt = textPrompt
       )
 
@@ -349,7 +347,7 @@ class TextModelServiceTranslatorTest {
         TextTranslation(textWithNewline)
       )
 
-      val result = translatorWithNewlines.translateText(translations)
+      val result = translatorWithNewlines.translate(translations)
 
       assertEquals(1, result.size)
       assertTrue(result[0].translation!!.contains("translated: Hello 1"))
@@ -360,9 +358,8 @@ class TextModelServiceTranslatorTest {
     fun `test translation of text with newlines`() = runBlocking {
       val mockServiceForNewlines = MockTextModelService(200)
 
-      val translatorWithNewlines = TextModelServiceTranslator(
+      val translatorWithNewlines = TextModelTranslator(
         mockServiceForNewlines,
-        jsonPrompt = jsonPrompt,
         textPrompt = textPrompt
       )
 
@@ -372,7 +369,7 @@ class TextModelServiceTranslatorTest {
         TextTranslation(textWithNewline)
       )
 
-      val result = translatorWithNewlines.translateText(translations)
+      val result = translatorWithNewlines.translate(translations)
 
       assertEquals(1, result.size)
       assertTrue(result[0].translation!!.contains("translated: Hello 1"))

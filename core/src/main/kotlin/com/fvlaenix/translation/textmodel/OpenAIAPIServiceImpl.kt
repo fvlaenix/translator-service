@@ -92,6 +92,7 @@ class OpenAIAPIServiceImpl(
       try {
         return makeRequest(data, systemMessage)
       } catch (e: Exception) {
+        println("Request reject: ${e.message}")
         if (attempts == 0) throw e
       }
     }

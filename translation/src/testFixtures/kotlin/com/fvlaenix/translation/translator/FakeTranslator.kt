@@ -45,14 +45,6 @@ class FakeTranslator : Translator {
   }
 
   override suspend fun translate(data: List<Translation>): List<Translation> {
-    return if (data.all { it is TextTranslation }) {
-      translateText(data.filterIsInstance<TextTranslation>())
-    } else {
-      translateJson(data)
-    }
-  }
-
-  override suspend fun translateJson(data: List<Translation>): List<Translation> {
     return data.map { translation ->
       when (translation) {
         is TextTranslation -> {
@@ -72,16 +64,6 @@ class FakeTranslator : Translator {
           )
         }
       }
-    }
-  }
-
-  override suspend fun translateText(data: List<TextTranslation>): List<TextTranslation> {
-    return data.map { translation ->
-      val result = translation.translation ?: textTranslations[translation.original]
-      TextTranslation(
-        original = translation.original,
-        translation = result
-      )
     }
   }
 

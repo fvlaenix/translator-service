@@ -34,22 +34,12 @@ class DialogTranslation(
 
 /**
  * Interface for text translation services.
- * Implementations should handle both simple text translations and structured dialog translations.
  */
 interface Translator {
   /**
-   * Translates a list of texts. Automatically determines whether to use text or JSON-based translation
-   * based on the type of Translation objects.
+   * Translates a list of texts.
+   * @param data List of translations to translate
+   * @return List of translated results
    */
   suspend fun translate(data: List<Translation>): List<Translation>
-
-  /**
-   * Translates a list of texts using JSON format, suitable for structured data like dialogs
-   */
-  suspend fun translateJson(data: List<Translation>): List<Translation>
-
-  /**
-   * Translates a list of simple texts
-   */
-  suspend fun translateText(data: List<TextTranslation>): List<TextTranslation>
 }
