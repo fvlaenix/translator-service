@@ -183,6 +183,65 @@ class TranslationBookService(
     }
   }
 
+  /**
+   * Extracts all unique names from all translation books using system dialog providers
+   * @return Set of unique names found across all books
+   */
+  fun extractUniqueNames(): Set<String> {
+    val uniqueNames = mutableSetOf<String>()
+
+    books.forEach { book ->
+      book.translationBook.forEach { translationData ->
+        try {
+          val result = dialogProvider.get(translationData.toTranslate)
+          result.system.forEach { systemDialog ->
+            when (systemDialog) {
+              is ElmiaNameDialogProvider.ElmiaDialog -> {
+                // The name is already translated by NamesService in the provider
+                // We need to get the original name, let's extract it from the original text
+                val originalText = translationData.toTranslate
+                val positionOfSplit = originalText.indexOfFirst { it == '\n' }
+                if (positionOfSplit != -1) {
+                  val originalName = originalText.split("\n")[0]
+                  uniqueNames.add(originalName)
+                }
+              }
+
+              is SylphNameDialogProvider.SylphDialog -> {
+                // Extract original name from the pattern \\n<name>
+                val originalText = translationData.toTranslate
+                val match = SylphNameDialogProvider.REGEX.find(originalText)
+                match?.let {
+                  val originalName = it.groups[1]?.value
+                  originalName?.let { name -> uniqueNames.add(name) }
+                }
+              }
+
+              is Bo10FNameDialogProvider.Bo10FDialog -> {
+                // Extract original name from the pattern NAME at the beginning
+                val originalText = translationData.toTranslate
+                val match = Bo10FNameDialogProvider.REGEX.find(originalText)
+                match?.let {
+                  val originalName = it.groups[0]?.value?.trim()
+                  originalName?.let { name -> uniqueNames.add(name) }
+                }
+              }
+
+              else -> throw Exception("Unknown dialog type ${systemDialog::class.simpleName}")
+            }
+          }
+        } catch (e: KeyNotFoundException) {
+          uniqueNames.add(e.notFoundKey)
+        } catch (e: Exception) {
+          // Skip entries that cause errors in dialog processing
+          return@forEach
+        }
+      }
+    }
+
+    return uniqueNames
+  }
+
   private fun checkNames() {
     val notFoundKeys = mutableListOf<String>()
     books.forEachIndexed books@{ _, book ->
