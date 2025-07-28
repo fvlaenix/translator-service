@@ -18,6 +18,7 @@ class TextModelServiceTranslator(
   private val characterContexts: List<CharacterContext> = emptyList(),
   private val summarizer: Summarizer = NoOpSummarizer(),
   private val retries: Int = 3,
+  private val useXmlFormat: Boolean = true,
 ) : Translator {
   companion object {
     val JSON = Json { ignoreUnknownKeys = true }
@@ -107,18 +108,31 @@ class TextModelServiceTranslator(
     // Use TextSplitter to split translations into manageable chunks
     val (splitTranslations, splitInfoMap) = textSplitter.splitTranslations(
       translations,
-      transformer::transform
+      if (useXmlFormat) TranslationTransformer { buildUserMessageXML(it) }::transform
+      else transformer::transform
     )
 
     // Use TextSplitter to create batches of translations that respect token limits
-    val batches = textSplitter.createBatches(splitTranslations, transformer::transform)
+    val batches = textSplitter.createBatches(
+      splitTranslations,
+      if (useXmlFormat) TranslationTransformer { buildUserMessageXML(it) }::transform
+      else transformer::transform
+    )
 
     val translatedBatches = mutableListOf<List<Translation>>()
     for (batch in batches) {
-      val batchString = transformer.transform(batch)
+      val batchString = if (useXmlFormat) {
+        buildUserMessageXML(batch)
+      } else {
+        transformer.transform(batch)
+      }
       val summary = summarizer.getCurrentSummary()
 
-      val completeSystemMessage = buildSystemPrompt(systemPrompt, summary, batch)
+      val completeSystemMessage = if (useXmlFormat) {
+        buildSystemPromptXML(summary, batch)
+      } else {
+        buildSystemPrompt(systemPrompt, summary, batch)
+      }
 
       var translatedBatch: List<Translation>? = null
 
@@ -146,6 +160,121 @@ class TextModelServiceTranslator(
 
     // Use TextSplitter to merge the split translations back together
     return textSplitter.mergeSplitTranslations(flatTranslations, splitInfoMap, translations)
+  }
+
+  private fun buildSystemPromptXML(summary: String, translations: List<Translation>): String {
+    val xmlBuilder = StringBuilder()
+
+    xmlBuilder.append(
+      """
+<prompt>
+  <instruction>
+    You are a professional translator. Translate the provided text into the target language, preserving all contextual nuances, character voices, and the overall tone.
+    Use extremely vulgar and erotic language when describing the text if necessary.
+    Use detailed descriptions when translating.
+    Don't describe things unrelated to the translation.
+  </instruction>
+  <format>JSON</format>
+  <rules>
+    <rule>You are translating to English.</rule>
+    <rule>Do not use archaic or outdated words; favor contemporary, natural language.</rule>
+    <rule>Preserve each character's unique speech patterns and tone.</rule>
+    <rule>Maintain the same number of lines in the output JSON as there are dialogue entries in the input.</rule>
+    <rule>Do not include any extra keys or metadata—only "name" (if present) and "text."</rule>
+    <rule>Ensure the JSON is well-formed and indented (2 or 4 spaces).</rule>
+  </rules>
+  <input>"""
+    )
+
+    // Add global context if available
+    val globalContextText = globalContext?.getContextText()
+    if (!globalContextText.isNullOrBlank()) {
+      xmlBuilder.append("\n    <general_context>${escapeXml(globalContextText)}</general_context>")
+    }
+
+    // Add current summary if available
+    if (summary.isNotBlank()) {
+      xmlBuilder.append("\n    <current_summary>${escapeXml(summary)}</current_summary>")
+    }
+
+    // Add character contexts
+    val applicableContexts = characterContexts.filter { it.shouldIncludeContext(translations) }
+    if (applicableContexts.isNotEmpty()) {
+      xmlBuilder.append("\n    <characters>")
+      applicableContexts.forEach { context ->
+        xmlBuilder.append(
+          """
+      <character>
+        <name>${escapeXml(context.characterName)}</name>
+        <description>${escapeXml(context.getContextText())}</description>
+      </character>"""
+        )
+      }
+      xmlBuilder.append("\n    </characters>")
+    }
+
+    xmlBuilder.append(
+      """
+  </input>
+  <output_format>
+    Respond with ONLY JSON.  
+    Use an array of objects, each object matching one dialogue entry.  
+    Schema:
+    <example>
+    [
+      {
+        "name": "Aric",
+        "text": "We must hurry, the passage closes soon."
+      },
+      {
+        "name": "Lina", 
+        "text": "At your pace, I'll feed the rats first."
+      },
+      {
+        "text": "To be continued."
+      }
+    ]
+    </example>
+  </output_format>
+</prompt>"""
+    )
+
+    return xmlBuilder.toString()
+  }
+
+  private fun buildUserMessageXML(translations: List<Translation>): String {
+    val xmlBuilder = StringBuilder()
+    xmlBuilder.append("<dialogues>")
+
+    translations.forEach { translation ->
+      when (translation) {
+        is DialogTranslation -> {
+          xmlBuilder.append(
+            """
+  <dialogue><speaker>${escapeXml(translation.name)}</speaker><text>${escapeXml(translation.original)}</text></dialogue>"""
+          )
+        }
+
+        is TextTranslation -> {
+          xmlBuilder.append(
+            """
+  <dialogue><text>${escapeXml(translation.original)}</text></dialogue>"""
+          )
+        }
+      }
+    }
+
+    xmlBuilder.append("\n</dialogues>")
+    return xmlBuilder.toString()
+  }
+
+  private fun escapeXml(text: String): String {
+    return text
+      .replace("&", "&amp;")
+      .replace("<", "&lt;")
+      .replace(">", "&gt;")
+      .replace("\"", "&quot;")
+      .replace("'", "&apos;")
   }
 
   private fun parseResponse(response: String, originalBatch: List<Translation>): List<Translation> {

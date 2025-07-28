@@ -6,7 +6,7 @@ import kotlin.io.path.Path
 import kotlin.io.path.readText
 
 class CharacterContext : Context {
-  private val characterName: String
+  val characterName: String
   private val contextText: String
 
   constructor(characterName: String, filePath: String) {
