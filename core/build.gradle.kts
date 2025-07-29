@@ -5,8 +5,8 @@ plugins {
 }
 
 dependencies {
-  implementation(platform("com.aallam.openai:openai-client-bom:3.5.1"))
-  implementation("com.aallam.openai:openai-client")
+  api(platform("com.aallam.openai:openai-client-bom:3.5.1"))
+  api("com.aallam.openai:openai-client")
   implementation("com.aallam.ktoken:ktoken:0.4.0")
   runtimeOnly("io.ktor:ktor-client-okhttp")
 

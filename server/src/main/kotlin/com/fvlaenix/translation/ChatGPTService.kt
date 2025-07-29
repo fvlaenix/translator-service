@@ -18,7 +18,7 @@ class ChatGPTService(
   private val translator: Translator = TextModelTranslator(OpenAIAPIServiceImpl()),
 ) : TranslationServiceGrpcKt.TranslationServiceCoroutineImplBase() {
 
-  constructor(model: String) : this(TextModelTranslator(OpenAIAPIServiceImpl(model)))
+  constructor(model: String) : this(TextModelTranslator(OpenAIAPIServiceImpl(model = model)))
 
   private val atomicId = AtomicInteger(0)
 

@@ -1,5 +1,6 @@
 package com.fvlaenix.translation.textmodel
 
+import com.aallam.ktoken.Encoding
 import com.aallam.ktoken.Tokenizer
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
@@ -17,9 +18,18 @@ import java.io.File
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.util.logging.Level
+import java.util.logging.Logger
 import kotlin.time.Duration.Companion.seconds
 
+private val LOG = Logger.getLogger(OpenAIAPIServiceImpl::class.simpleName)
+
 class OpenAIAPIServiceImpl(
+  private val openAI: OpenAI = OpenAI(
+    logging = LoggingConfig(LogLevel.None),
+    token = TOKEN,
+    timeout = Timeout(socket = 1200.seconds)
+  ),
   private val model: String = "gpt-4-turbo",
   private val maxRetries: Int = 3,
   // TODO remove stupid way
@@ -69,18 +79,24 @@ class OpenAIAPIServiceImpl(
     val MODELS = mapOf(
       "gpt-4-turbo" to ModelInfo("gpt-4-turbo", 4096, true),
       "o1" to ModelInfo("o1", 100000, false),
+      "openai/o1" to ModelInfo("openai/o1", 100000, false),
       "o1-mini" to ModelInfo("o1-mini", 65536, false)
     )
   }
 
-  private val openAI = OpenAI(
-    logging = LoggingConfig(LogLevel.None),
-    token = TOKEN,
-    timeout = Timeout(socket = 1200.seconds)
-  )
-
-  suspend fun countOfTokens(prompt: String): Int =
-    Tokenizer.of(model).encode(prompt).count()
+  suspend fun countOfTokens(prompt: String): Int {
+    val model = if (model.contains("/")) {
+      model.substringAfterLast("/")
+    } else {
+      model
+    }
+    return try {
+      Tokenizer.of(model).encode(prompt).count()
+    } catch (_: IllegalStateException) {
+      LOG.log(Level.WARNING, "Can't find Tokenizer of '$model'. Fallback to CL100K")
+      Tokenizer.of(Encoding.CL100K_BASE).encode(prompt).count()
+    }
+  }
 
   override suspend fun fractionOfTokenLimit(text: String): Float =
     countOfTokens(text).toFloat() / MODELS[model]!!.maxTokenCount

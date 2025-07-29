@@ -14,7 +14,11 @@ import com.fvlaenix.translation.translator.Translator
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import java.nio.file.Path
+import java.util.logging.Level
+import java.util.logging.Logger
 import kotlin.io.path.inputStream
+
+private val LOG = Logger.getLogger(TranslationBookService::class.simpleName)
 
 class TranslationBookService(
   path: Path,
@@ -163,6 +167,7 @@ class TranslationBookService(
     val result = try {
       translator.translate(lines)
     } catch (e: Exception) {
+      LOG.log(Level.SEVERE, "Exception during translation book ${book.name}", e)
       null
     }
     if (result != null) {
