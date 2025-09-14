@@ -1,6 +1,6 @@
 package com.fvlaenix.translation.review
 
-import com.fvlaenix.translation.textmodel.TextModelService
+import com.fvlaenix.text.TextModelService
 import com.fvlaenix.translation.translator.Translation
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.json.Json

@@ -3,8 +3,10 @@ package com.fvlaenix.translation
 import com.fvlaenix.alive.protobuf.IsAliveRequest
 import com.fvlaenix.alive.protobuf.IsAliveResponse
 import com.fvlaenix.alive.protobuf.isAliveResponse
+import com.fvlaenix.text.ModelInfo
+import com.fvlaenix.text.OpenAIAPIServiceImpl
+import com.fvlaenix.text.OpenAIModelProvider
 import com.fvlaenix.translation.protobuf.*
-import com.fvlaenix.translation.textmodel.OpenAIAPIServiceImpl
 import com.fvlaenix.translation.translator.TextModelTranslator
 import com.fvlaenix.translation.translator.TextTranslation
 import com.fvlaenix.translation.translator.Translator
@@ -15,10 +17,22 @@ import java.util.logging.Logger
 private val LOG = Logger.getLogger(ChatGPTService::class.java.name)
 
 class ChatGPTService(
-  private val translator: Translator = TextModelTranslator(OpenAIAPIServiceImpl()),
+  private val translator: Translator = TextModelTranslator(
+    OpenAIAPIServiceImpl(
+      openAI = OpenAIModelProvider.createDefaultOpenAiApi(TOKEN),
+      modelInfo = OpenAIModelProvider.GPT_4_TURBO
+    )
+  ),
 ) : TranslationServiceGrpcKt.TranslationServiceCoroutineImplBase() {
 
-  constructor(model: String) : this(TextModelTranslator(OpenAIAPIServiceImpl(model = model)))
+  constructor(modelInfo: ModelInfo) : this(
+    TextModelTranslator(
+      OpenAIAPIServiceImpl(
+        openAI = OpenAIModelProvider.createDefaultOpenAiApi(TOKEN),
+        modelInfo = modelInfo
+      )
+    )
+  )
 
   private val atomicId = AtomicInteger(0)
 

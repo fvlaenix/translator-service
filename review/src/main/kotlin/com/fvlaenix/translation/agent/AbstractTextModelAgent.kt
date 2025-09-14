@@ -1,6 +1,6 @@
 package com.fvlaenix.translation.agent
 
-import com.fvlaenix.translation.textmodel.TextModelService
+import com.fvlaenix.text.TextModelService
 
 /**
  * Abstract class for agents working with text models.

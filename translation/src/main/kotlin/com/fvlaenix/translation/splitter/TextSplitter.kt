@@ -1,6 +1,6 @@
 package com.fvlaenix.translation.splitter
 
-import com.fvlaenix.translation.textmodel.TextModelService
+import com.fvlaenix.text.TextModelService
 import com.fvlaenix.translation.translator.DialogTranslation
 import com.fvlaenix.translation.translator.TextTranslation
 import com.fvlaenix.translation.translator.Translation

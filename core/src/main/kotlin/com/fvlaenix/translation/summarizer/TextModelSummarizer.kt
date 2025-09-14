@@ -1,6 +1,6 @@
 package com.fvlaenix.translation.summarizer
 
-import com.fvlaenix.translation.textmodel.TextModelService
+import com.fvlaenix.text.TextModelService
 
 class TextModelSummarizer(
   private val textModelService: TextModelService,

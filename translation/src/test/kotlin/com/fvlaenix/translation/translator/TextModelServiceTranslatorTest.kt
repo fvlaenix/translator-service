@@ -1,6 +1,7 @@
 package com.fvlaenix.translation.translator
 
-import com.fvlaenix.translation.textmodel.TextModelService
+import com.aallam.openai.api.chat.ChatMessage
+import com.fvlaenix.text.TextModelService
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -15,31 +16,31 @@ class TextModelServiceTranslatorTest {
     var lastRequest: String? = null
     var lastSystemMessage: String? = null
 
-    override suspend fun sendRequest(prompt: String, systemMessage: String?): String {
+    override suspend fun sendRequest(prompt: String?, userMessage: String): String {
       countOfRequests++
       lastRequest = prompt
-      lastSystemMessage = systemMessage
+      lastSystemMessage = userMessage
 
-        if (fractionOfTokenLimit(prompt) > 0.8f) {
+      if (fractionOfTokenLimit(userMessage) > 0.8f) {
         throw IllegalArgumentException("Text exceeds token limit fraction")
       }
 
       return when {
-        prompt.trim().startsWith("[") && prompt.trim().endsWith("]") -> {
-          prompt.replace("\"text\": \"", "\"text\": \"translated: ")
+        userMessage.trim().startsWith("[") && userMessage.trim().endsWith("]") -> {
+          userMessage.replace("\"text\": \"", "\"text\": \"translated: ")
         }
 
         else -> {
-          prompt.split("\n").joinToString("\n") { "translated: $it" }
+          userMessage.split("\n").joinToString("\n") { "translated: $it" }
         }
       }
     }
 
-    override suspend fun sendBatchRequest(prompts: List<String>, systemMessage: String?): List<String> {
-      return prompts.map { sendRequest(it, systemMessage) }
+    override suspend fun sendRequest(messages: List<ChatMessage>): String {
+      TODO("Not yet implemented")
     }
 
-      override suspend fun fractionOfTokenLimit(text: String): Float {
+    override suspend fun fractionOfTokenLimit(text: String): Float {
           val totalLength = text.length
       return totalLength.toFloat() / maxChars
     }

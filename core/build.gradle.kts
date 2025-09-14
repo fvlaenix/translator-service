@@ -17,4 +17,8 @@ dependencies {
   implementation("org.slf4j:slf4j-simple:2.0.9")
   implementation("org.apache.logging.log4j:log4j-core:2.20.0")
   implementation("org.apache.logging.log4j:log4j-api:2.20.0")
+
+  testFixturesImplementation("ai-services:core")
+  testFixturesApi(platform("com.aallam.openai:openai-client-bom:3.5.1"))
+  testFixturesApi("com.aallam.openai:openai-client")
 }

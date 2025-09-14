@@ -1,3 +1,4 @@
+import com.fvlaenix.text.OpenAIModelProvider
 import com.fvlaenix.translation.ChatGPTServer
 import java.util.logging.Level
 import java.util.logging.LogManager
@@ -19,7 +20,7 @@ fun main() {
   val server = ChatGPTServer(
     port = 50052,
     // model = "gpt-3.5-turbo-0613",
-    model = "gpt-4-turbo"
+    model = OpenAIModelProvider.GPT_4_TURBO
   )
   server.start()
   runServerLog.log(Level.INFO, "Started server")

@@ -1,5 +1,8 @@
 package com.fvlaenix.translation.textmodel
 
+import com.aallam.openai.api.chat.ChatMessage
+import com.fvlaenix.text.TextModelService
+
 class TestTextModelService : TextModelService {
   private val responses = mutableMapOf<String, String>()
   private var defaultResponse: String = "Test response"
@@ -29,23 +32,22 @@ class TestTextModelService : TextModelService {
     errorToThrow = null
   }
 
-  override suspend fun fractionOfTokenLimit(prompt: String): Float =
+  override suspend fun fractionOfTokenLimit(text: String): Float =
     0.5f
 
-  override suspend fun sendRequest(prompt: String, systemMessage: String?): String {
+  override suspend fun sendRequest(prompt: String?, userMessage: String): String {
     if (shouldThrowError) {
       throw errorToThrow ?: IllegalStateException("Test error")
     }
-    // Try to find response with system message first
-    val response = if (systemMessage != null) {
-      responses[prompt + systemMessage] ?: responses[prompt] ?: defaultResponse
-    } else {
-      responses[prompt] ?: defaultResponse
-    }
-    return response
+    val key = (prompt ?: "") + userMessage
+    return responses[key] ?: responses[userMessage] ?: defaultResponse
   }
 
-  override suspend fun sendBatchRequest(prompts: List<String>, systemMessage: String?): List<String> {
-    return prompts.map { prompt -> sendRequest(prompt, systemMessage) }
+  override suspend fun sendRequest(messages: List<ChatMessage>): String {
+    if (shouldThrowError) {
+      throw errorToThrow ?: IllegalStateException("Test error")
+    }
+    val key = messages.joinToString(separator = "|") { "${it.role}:${it.content}" }
+    return responses[key] ?: defaultResponse
   }
 }

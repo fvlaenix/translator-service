@@ -1,10 +1,10 @@
 package com.fvlaenix.translation.review
 
+import com.fvlaenix.text.TextModelService
 import com.fvlaenix.translation.agent.AbstractTextModelAgent
 import com.fvlaenix.translation.splitter.TextSplitter
 import com.fvlaenix.translation.summarizer.Summarizer
 import com.fvlaenix.translation.summarizer.TextModelSummarizer
-import com.fvlaenix.translation.textmodel.TextModelService
 import com.fvlaenix.translation.translator.TextTranslation
 import com.fvlaenix.translation.translator.Translation
 import kotlinx.coroutines.coroutineScope

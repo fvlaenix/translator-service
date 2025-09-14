@@ -1,12 +1,14 @@
 package com.fvlaenix.translation.table
 
+import com.fvlaenix.text.OpenAIAPIServiceImpl
+import com.fvlaenix.text.OpenAIModelProvider
 import com.fvlaenix.translation.FilesUtil
 import com.fvlaenix.translation.NamesService
+import com.fvlaenix.translation.TOKEN
 import com.fvlaenix.translation.systemdialog.Bo10FNameDialogProvider
 import com.fvlaenix.translation.systemdialog.ElmiaNameDialogProvider
 import com.fvlaenix.translation.systemdialog.ProvidersCollection
 import com.fvlaenix.translation.systemdialog.SylphNameDialogProvider
-import com.fvlaenix.translation.textmodel.OpenAIAPIServiceImpl
 import com.fvlaenix.translation.translator.DialogTranslation
 import com.fvlaenix.translation.translator.TextModelTranslator
 import com.fvlaenix.translation.translator.TextTranslation
@@ -26,7 +28,13 @@ class TranslationBookService(
   gameId: String,
   private val namesService: NamesService = NamesService("${gameId}_$language.properties"),
   private val dialogProvider: ProvidersCollection = ProvidersCollection.defaultProvidersCollection(namesService),
-  private val translator: Translator = TextModelTranslator(OpenAIAPIServiceImpl())
+  // TODO redo this trash constructor
+  private val translator: Translator = TextModelTranslator(
+    OpenAIAPIServiceImpl(
+      openAI = OpenAIModelProvider.createDefaultOpenAiApi(TOKEN),
+      modelInfo = OpenAIModelProvider.GPT_4_TURBO
+    )
+  )
 ) {
   private val books: List<TranslationBook> =
     FilesUtil.getPaths(path, filter = { it.extension == "xlxs" || it.extension == "xlsx" })

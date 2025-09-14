@@ -1,11 +1,11 @@
 package com.fvlaenix.translation.translator
 
+import com.fvlaenix.text.TextModelService
 import com.fvlaenix.translation.context.CharacterContext
 import com.fvlaenix.translation.context.GlobalContext
 import com.fvlaenix.translation.splitter.TextSplitter
 import com.fvlaenix.translation.summarizer.NoOpSummarizer
 import com.fvlaenix.translation.summarizer.Summarizer
-import com.fvlaenix.translation.textmodel.TextModelService
 
 /**
  * Translator that handles simple text translations using plain text format.

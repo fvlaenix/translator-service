@@ -1,9 +1,10 @@
 package com.fvlaenix.translation
 
+import com.fvlaenix.text.ModelInfo
 import io.grpc.Server
 import io.grpc.ServerBuilder
 
-class ChatGPTServer(port: Int, model: String) {
+class ChatGPTServer(port: Int, model: ModelInfo) {
   private val server: Server = ServerBuilder
     .forPort(port)
     .addService(ChatGPTService(model))
