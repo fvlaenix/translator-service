@@ -5,6 +5,7 @@ plugins {
 }
 
 dependencies {
+  implementation("ai-services:core")
   api(platform("com.aallam.openai:openai-client-bom:3.5.1"))
   api("com.aallam.openai:openai-client")
   implementation("com.aallam.ktoken:ktoken:0.4.0")

@@ -3,8 +3,8 @@ import com.google.protobuf.gradle.id
 
 plugins {
   kotlin("jvm")
-  id("com.google.protobuf") version "0.9.4"
-  id("com.github.johnrengelman.shadow") version "8.1.1"
+  id("com.google.protobuf")
+  id("com.github.johnrengelman.shadow")
   application
 }
 
