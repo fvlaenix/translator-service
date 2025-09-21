@@ -1,7 +1,5 @@
 package com.fvlaenix.translation.translator
 
-import com.aallam.openai.api.chat.ChatMessage
-import com.fvlaenix.text.TextModelService
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -9,42 +7,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-class TextModelServiceTranslatorTest {
-
-  class MockTextModelService(private val maxChars: Int) : TextModelService {
-    var countOfRequests = 0
-    var lastRequest: String? = null
-    var lastSystemMessage: String? = null
-
-    override suspend fun sendRequest(prompt: String?, userMessage: String): String {
-      countOfRequests++
-      lastRequest = prompt
-      lastSystemMessage = userMessage
-
-      if (fractionOfTokenLimit(userMessage) > 0.8f) {
-        throw IllegalArgumentException("Text exceeds token limit fraction")
-      }
-
-      return when {
-        userMessage.trim().startsWith("[") && userMessage.trim().endsWith("]") -> {
-          userMessage.replace("\"text\": \"", "\"text\": \"translated: ")
-        }
-
-        else -> {
-          userMessage.split("\n").joinToString("\n") { "translated: $it" }
-        }
-      }
-    }
-
-    override suspend fun sendRequest(messages: List<ChatMessage>): String {
-      TODO("Not yet implemented")
-    }
-
-    override suspend fun fractionOfTokenLimit(text: String): Float {
-          val totalLength = text.length
-      return totalLength.toFloat() / maxChars
-    }
-  }
+class TextModelServiceTranslatorTest : AbstractTranslatorTest() {
 
   private lateinit var mockService: MockTextModelService
   private lateinit var translator: AbstractTextModelTranslator
@@ -143,78 +106,6 @@ class TextModelServiceTranslatorTest {
     }
   }
 
-  @Nested
-  inner class DialogTranslationTests {
-    @Test
-    fun `test dialog translation with no splitting needed`() = runBlocking {
-      val translations = listOf(
-        DialogTranslation("Alice", "Hello, how are you?"),
-        DialogTranslation("Bob", "I'm fine, thank you!")
-      )
-
-      val result = translator.translate(translations)
-
-      assertEquals(2, result.size)
-      assertTrue(result[0].translation!!.contains("translated: Hello"))
-      assertTrue(result[1].translation!!.contains("translated: I'm fine"))
-    }
-
-    @Test
-    fun `test dialog translation with splitting`() = runBlocking {
-      val longDialog = "This is a dialog token limit. " +
-          "We need to ensure multiple parts. " +
-          "Then it should final result."
-      val translations = listOf(
-        DialogTranslation("Character", longDialog)
-      )
-
-      val result = translator.translate(translations)
-
-      assertEquals(1, result.size)
-      assertTrue(result[0].translation!!.contains("translated:"))
-      assertTrue(result[0].translation!!.contains("dialog"))
-      assertTrue(result[0].translation!!.contains("limit"))
-    }
-
-    @Test
-    fun `test mixed translation types`() = runBlocking {
-      val translations = listOf(
-        DialogTranslation("Narrator", "Narrator text"),
-        DialogTranslation("Alice", "Hello there!"),
-        DialogTranslation("Narrator", "More narrator text")
-      )
-            
-      val result = translator.translate(translations)
-
-      assertEquals(3, result.size)
-      assertTrue(result[0].translation!!.contains("translated:"))
-      assertTrue(result[1].translation!!.contains("translated:"))
-      assertTrue(result[2].translation!!.contains("translated:"))
-    }
-
-    @Test
-    fun `test very big context`() = runBlocking {
-      val richContextModel = MockTextModelService(800)
-      val richContextTranslator =
-        TextModelTranslator(richContextModel, textPrompt = textPrompt)
-      val translations = listOf(
-        DialogTranslation("Narrator", "Narrator text"),
-        DialogTranslation("Alice", "Hello there!"),
-        DialogTranslation("Alice", "Hello there!"),
-        DialogTranslation("Alice", "Hello there!"),
-        DialogTranslation("Alice", "Hello there!"),
-        DialogTranslation("Alice", "Hello there!"),
-        DialogTranslation("Alice", "Hello there!"),
-        DialogTranslation("Alice", "Hello there!"),
-        DialogTranslation("Alice", "Hello there!"),
-        DialogTranslation("Narrator", "More narrator text")
-      )
-
-      val result = richContextTranslator.translate(translations)
-      assertEquals(10, result.size)
-      assertEquals(1, richContextModel.countOfRequests)
-    }
-  }
 
   @Nested
   inner class EdgeCaseTests {
