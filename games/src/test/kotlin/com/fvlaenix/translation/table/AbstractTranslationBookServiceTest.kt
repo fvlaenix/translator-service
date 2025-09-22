@@ -26,9 +26,6 @@ abstract class AbstractTranslationBookServiceTest {
     testOpenAIService = TestTextModelService()
     testOpenAIService.reset() // Ensure clean state
 
-    // Set default response for any unknown request
-    testOpenAIService.setDefaultResponse("Test response")
-
     // Initialize NamesService with test data
     namesService = NamesService(mapOf())
   }

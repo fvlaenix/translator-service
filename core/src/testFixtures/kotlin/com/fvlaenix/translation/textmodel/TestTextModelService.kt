@@ -2,18 +2,16 @@ package com.fvlaenix.translation.textmodel
 
 import com.aallam.openai.api.chat.ChatMessage
 import com.fvlaenix.text.TextModelService
+import com.fvlaenix.translation.TestConstants
 
 class TestTextModelService : TextModelService {
   private val responses = mutableMapOf<String, String>()
-  private var defaultResponse: String = "Test response"
+  private var defaultResponse: String? = null
   private var shouldThrowError = false
   private var errorToThrow: Exception? = null
 
-  fun setResponse(prompt: String, response: String, textPrompt: String? = null) {
-    responses[prompt] = response
-    if (textPrompt != null) {
-      responses[prompt + textPrompt] = response
-    }
+  fun setResponse(request: String, response: String) {
+    responses[request] = response
   }
 
   fun setDefaultResponse(response: String) {
@@ -39,8 +37,8 @@ class TestTextModelService : TextModelService {
     if (shouldThrowError) {
       throw errorToThrow ?: IllegalStateException("Test error")
     }
-    val key = (prompt ?: "") + userMessage
-    return responses[key] ?: responses[userMessage] ?: defaultResponse
+    return responses[userMessage] ?: defaultResponse
+    ?: throw IllegalStateException("No response found for prompt: $userMessage")
   }
 
   override suspend fun sendRequest(messages: List<ChatMessage>): String {
@@ -48,6 +46,21 @@ class TestTextModelService : TextModelService {
       throw errorToThrow ?: IllegalStateException("Test error")
     }
     val key = messages.joinToString(separator = "|") { "${it.role}:${it.content}" }
-    return responses[key] ?: defaultResponse
+    return responses[key] ?: defaultResponse ?: throw IllegalStateException("No response found for prompt: $messages")
+  }
+
+  fun setTestResponse(prompt: String, response: String) {
+    setResponse(prompt, response)
+  }
+
+  fun setTestBatchResponse(prompts: List<String>, responses: List<String>) {
+    require(prompts.size == responses.size) { "Prompts and responses must have same size" }
+    val batchPrompt = prompts.joinToString("\n")
+    val batchResponse = responses.joinToString("\n")
+    setTestResponse(batchPrompt, batchResponse)
+  }
+
+  fun setupTestDefaults() {
+    setDefaultResponse(TestConstants.DEFAULT_TEST_RESPONSE)
   }
 }

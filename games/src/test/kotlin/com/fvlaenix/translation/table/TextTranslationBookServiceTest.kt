@@ -21,8 +21,7 @@ class TextTranslationBookServiceTest : AbstractTranslationBookServiceTest() {
     // Setup test response with system message
     testOpenAIService.setResponse(
       "Original text to translate",
-      "Translated text",
-      textPrompt = TextModelTranslator::class.java.getResource("/prompt.txt")!!.readText()
+      "Translated text"
     )
 
     // Create translation service
@@ -47,8 +46,7 @@ class TextTranslationBookServiceTest : AbstractTranslationBookServiceTest() {
     // Setup test response with system message
     testOpenAIService.setResponse(
       "First text\nSecond text",
-      "First translation\nSecond translation",
-      textPrompt = TextModelTranslator::class.java.getResource("/prompt.txt")!!.readText()
+      "First translation\nSecond translation"
     )
 
     // Create translation service
