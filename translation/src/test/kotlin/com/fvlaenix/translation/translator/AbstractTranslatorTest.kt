@@ -12,23 +12,19 @@ abstract class AbstractTranslatorTest {
 
     override suspend fun sendRequest(prompt: String?, userMessage: String): String {
       countOfRequests++
-      // AbstractTextModelTranslator calls sendRequest(batchString, completeSystemMessage)
-      // So the first param is actually the user message (JSON array) and second is system message
-      val actualUserMessage = prompt ?: ""
-      val actualSystemMessage = userMessage
 
-      lastRequest = actualSystemMessage
-      lastSystemMessage = actualUserMessage
+      lastRequest = userMessage
+      lastSystemMessage = prompt
 
-      if (fractionOfTokenLimit(actualUserMessage) > 0.8f) {
+      if (fractionOfTokenLimit(userMessage) > 0.8f) {
         throw IllegalArgumentException("Text exceeds token limit fraction")
       }
 
       return when {
-        actualUserMessage.trim().startsWith("[") && actualUserMessage.trim().endsWith("]") -> {
+        userMessage.trim().startsWith("[") && userMessage.trim().endsWith("]") -> {
           // Handle JSON format - parse and return translated JSON
           try {
-            val jsonInput = actualUserMessage.trim()
+            val jsonInput = userMessage.trim()
             // Simple JSON parsing for the test - replace text values with translated versions
             val translatedJson = jsonInput.replace(Regex("\"text\":\\s*\"([^\"]+)\"")) { matchResult ->
               "\"text\": \"translated: ${matchResult.groupValues[1]}\""
@@ -36,12 +32,12 @@ abstract class AbstractTranslatorTest {
             translatedJson
           } catch (e: Exception) {
             // Fallback to simple replacement if JSON parsing fails
-            actualUserMessage.replace("\"text\": \"", "\"text\": \"translated: ")
+            userMessage.replace("\"text\": \"", "\"text\": \"translated: ")
           }
         }
 
         else -> {
-          actualUserMessage.split("\n").joinToString("\n") { "translated: $it" }
+          userMessage.split("\n").joinToString("\n") { "translated: $it" }
         }
       }
     }

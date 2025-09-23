@@ -108,7 +108,7 @@ abstract class AbstractTextModelTranslator(
       var retriesLeft = retries
       while (retriesLeft > 0) {
         try {
-          val responseString = textModelService.sendRequest(batchString, completeSystemMessage)
+          val responseString = textModelService.sendRequest(completeSystemMessage, batchString)
           translatedBatch = parseResponse(responseString, batch)
           translatedBatches.add(translatedBatch)
           break

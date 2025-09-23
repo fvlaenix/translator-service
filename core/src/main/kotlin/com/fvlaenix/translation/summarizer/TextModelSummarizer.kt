@@ -17,7 +17,7 @@ class TextModelSummarizer(
     }
 
     val prompt = buildSummaryPrompt(currentSummary, newText)
-    val updatedSummary = textModelService.sendRequest(prompt, summaryPrompt)
+    val updatedSummary = textModelService.sendRequest(summaryPrompt, prompt)
 
     // Potentially add logic for summary size limitation
     currentSummary = if (updatedSummary.length > maxSummaryLength) {

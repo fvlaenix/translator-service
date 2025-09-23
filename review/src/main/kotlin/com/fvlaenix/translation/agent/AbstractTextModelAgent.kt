@@ -32,7 +32,7 @@ abstract class AbstractTextModelAgent(
     while (attempts > 0) {
       attempts--
       try {
-        return textModelService.sendRequest(prompt, systemMessage)
+        return textModelService.sendRequest(systemMessage, prompt)
       } catch (e: Exception) {
         lastException = e
         if (attempts == 0) {

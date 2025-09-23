@@ -30,7 +30,7 @@ class JsonTextModelReviewer(
     while (attempts > 0) {
       attempts--
       try {
-        val response = textModelService.sendRequest(prompt, reviewerPrompt)
+        val response = textModelService.sendRequest(reviewerPrompt, prompt)
         return parseReviewResponse(response)
       } catch (e: Exception) {
         lastException = e
