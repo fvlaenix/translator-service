@@ -43,12 +43,12 @@ class TranslationBookServiceCacheTest {
 
   private fun createTranslationService(path: Path, gameId: String): TranslationBookService {
     return TranslationBookService(
-      path = path,
-      language = "RU",
-      gameId = gameId,
-      namesService = namesService,
-      dialogProvider = ProvidersCollection(emptyList()),
-      translator = TextModelTranslator(testTextModelService, textPrompt = TestConstants.TEST_PROMPT)
+      TranslationConfig(
+        path = path,
+        namesService = namesService,
+        dialogProvider = ProvidersCollection(emptyList()),
+        translator = TextModelTranslator(testTextModelService, textPrompt = TestConstants.TEST_PROMPT)
+      )
     )
   }
 
@@ -113,7 +113,7 @@ class TranslationBookServiceCacheTest {
 
     secondService.addToCache(firstService)
 
-    val mergedCache = secondService.cache
+    val mergedCache = secondService.getCache()
 
     assertThat(mergedCache["Overlapping text 1"]).isEqualTo("Перекрывающийся текст 1 (первый)")
     assertThat(mergedCache["Overlapping text 2"]).isEqualTo("Перекрывающийся текст 2 (первый)")
@@ -157,7 +157,7 @@ class TranslationBookServiceCacheTest {
 
     serviceA.addToCache(serviceB)
 
-    val mergedCache = serviceA.cache
+    val mergedCache = serviceA.getCache()
 
     assertThat(mergedCache["Text A1"]).isEqualTo("Текст А1")
     assertThat(mergedCache["Text A2"]).isEqualTo("Текст А2")
@@ -205,7 +205,7 @@ class TranslationBookServiceCacheTest {
 
     initialService.addToCache(updateService)
 
-    val mergedCache = initialService.cache
+    val mergedCache = initialService.getCache()
 
     assertThat(mergedCache["Common text 1"]).isEqualTo("Общий текст 1 (обновленный)")
 
@@ -270,7 +270,7 @@ class TranslationBookServiceCacheTest {
     newService.write(finalOutputDir)
 
     val finalFile = finalOutputDir.resolve("new_translations.xlsx")
-    val resultBook = TranslationBook(finalFile.inputStream(), finalFile.fileName)
+    val resultBook = TranslationBookIO().read(finalFile.inputStream(), finalFile.fileName)
 
     assertThat(resultBook.translationBook[0].toTranslate).isEqualTo("Translate me")
     assertThat(resultBook.translationBook[0].translate).isEqualTo("Переведи меня (старый)")
@@ -321,7 +321,7 @@ class TranslationBookServiceCacheTest {
 
     val secondSession = createTranslationService(workingDir, "persistent")
 
-    val cache = secondSession.cache
+    val cache = secondSession.getCache()
     assertThat(cache["Persistent text 1"]).isEqualTo("Постоянный текст 1")
     assertThat(cache["Persistent text 2"]).isEqualTo("Постоянный текст 2")
     assertThat(cache["Persistent text 3"]).isEqualTo("Постоянный текст 3")
@@ -362,7 +362,7 @@ class TranslationBookServiceCacheTest {
 
     println("Merging cache of size $largeCacheSize took: ${mergeTime}ms")
 
-    val mergedCache = smallService.cache
+    val mergedCache = smallService.getCache()
     assertThat(mergedCache).hasSize(largeCacheSize + 100)
 
     assertThat(mergedCache["Large cache text 1"]).isEqualTo("Большой кэш текст 1")

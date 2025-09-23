@@ -81,12 +81,12 @@ class TranslationBookRoundTripTest {
     }
 
     return TranslationBookService(
-      path = path,
-      language = "RU",
-      gameId = gameId,
-      namesService = namesService,
-      dialogProvider = ProvidersCollection(emptyList()),
-      translator = translator
+      TranslationConfig(
+        path = path,
+        namesService = namesService,
+        dialogProvider = ProvidersCollection(emptyList()),
+        translator = translator
+      )
     )
   }
 
@@ -161,7 +161,7 @@ class TranslationBookRoundTripTest {
 
     val translationService = createTranslationService(tempDir, "test-game")
 
-    val initialBook = TranslationBook(originalFile.inputStream(), originalFile.fileName)
+    val initialBook = TranslationBookIO().read(originalFile.inputStream(), originalFile.fileName)
     assertThat(initialBook.translationBook).hasSize(5)
 
     assertThat(initialBook.translationBook[2].translate).isEqualTo("Доброе утро всем.")
@@ -174,7 +174,7 @@ class TranslationBookRoundTripTest {
     translationService.write(outputDir)
 
     val outputFile = outputDir.resolve("original_simple.xlsx")
-    val finalBook = TranslationBook(outputFile.inputStream(), outputFile.fileName)
+    val finalBook = TranslationBookIO().read(outputFile.inputStream(), outputFile.fileName)
 
     assertThat(finalBook.translationBook).hasSize(5)
 
@@ -210,7 +210,7 @@ class TranslationBookRoundTripTest {
     translationService.write(outputDir)
 
     val outputFile = outputDir.resolve("original_extended.xlsx")
-    val finalBook = TranslationBook(outputFile.inputStream(), outputFile.fileName)
+    val finalBook = TranslationBookIO().read(outputFile.inputStream(), outputFile.fileName)
 
     assertThat(finalBook.translationBook).hasSize(5)
 
@@ -273,7 +273,7 @@ class TranslationBookRoundTripTest {
     val secondSessionService = createTranslationService(tempDir, "test-incremental")
 
     // Verify first 3 items are already translated by reading the file
-    val intermediateBook = TranslationBook(partialFile.inputStream(), partialFile.fileName)
+    val intermediateBook = TranslationBookIO().read(partialFile.inputStream(), partialFile.fileName)
     assertThat(intermediateBook.translationBook[0].translate).isEqualTo("Привет мир!")
     assertThat(intermediateBook.translationBook[1].translate).isEqualTo("Как дела сегодня?")
     assertThat(intermediateBook.translationBook[2].translate).isEqualTo("Доброе утро всем.")
@@ -288,7 +288,7 @@ class TranslationBookRoundTripTest {
     secondSessionService.write(finalOutputDir)
 
     val finalFile = finalOutputDir.resolve("incremental.xlsx")
-    val finalBook = TranslationBook(finalFile.inputStream(), finalFile.fileName)
+    val finalBook = TranslationBookIO().read(finalFile.inputStream(), finalFile.fileName)
 
     assertThat(finalBook.translationBook).hasSize(5)
     finalBook.translationBook.forEach { item ->
@@ -340,7 +340,7 @@ class TranslationBookRoundTripTest {
     translationService.write(outputDir)
 
     val outputFile = outputDir.resolve("format_test.xlsx")
-    val resultBook = TranslationBook(outputFile.inputStream(), outputFile.fileName)
+    val resultBook = TranslationBookIO().read(outputFile.inputStream(), outputFile.fileName)
 
     assertThat(resultBook.translationBook).hasSize(2)
     resultBook.translationBook.forEach { item ->
@@ -357,7 +357,7 @@ class TranslationBookRoundTripTest {
     assertThat(secondItem.name).isEqualTo("Speaker2")
     assertThat(secondItem.translate).isEqualTo("Незавершенный элемент")
 
-    val verificationBook = TranslationBook(outputFile.inputStream(), outputFile.fileName)
+    val verificationBook = TranslationBookIO().read(outputFile.inputStream(), outputFile.fileName)
     assertThat(verificationBook.translationBook).hasSize(2)
 
     val verifyFirst = verificationBook.translationBook[0] as TranslationData.TranslationDataWithNameData

@@ -59,12 +59,12 @@ class TranslationBookServiceIntegrationTest {
 
     // Create service with minimal dialog provider to handle quotes
     val service = TranslationBookService(
-      tempDir,
-      "EN",
-      "test-game",
-      namesService = NamesService(emptyMap()), // Empty names service to avoid name processing
-      dialogProvider = ProvidersCollection(listOf(MinimalDialogProvider())), // Use minimal provider to handle quotes
-      translator = fakeTranslator
+      TranslationConfig(
+        tempDir,
+        namesService = NamesService(), // Empty names service to avoid name processing
+        dialogProvider = ProvidersCollection(listOf(MinimalDialogProvider())), // Use minimal provider to handle quotes
+        translator = fakeTranslator
+      )
     )
 
     service.translate()
@@ -78,7 +78,7 @@ class TranslationBookServiceIntegrationTest {
     service.write(outputDir)
 
     val outputFile = outputDir.resolve("test.xlsx")
-    val translatedBook = TranslationBook(outputFile.inputStream(), Path.of("test.xlsx"))
+    val translatedBook = TranslationBookIO().read(outputFile.inputStream(), Path.of("test.xlsx"))
 
     // Skip header row (index 0) and check actual translations
     // MinimalDialogProvider.returnTransform removes quotes from the final result
@@ -106,11 +106,11 @@ class TranslationBookServiceIntegrationTest {
 
     // Create service and translate
     val service = TranslationBookService(
-      tempDir,
-      "EN",
-      "test-game",
-      namesService,
-      translator = fakeTranslator
+      TranslationConfig(
+        tempDir,
+        namesService,
+        translator = fakeTranslator
+      )
     )
     service.translate()
 
@@ -119,7 +119,7 @@ class TranslationBookServiceIntegrationTest {
     service.write(outputDir)
 
     val translatedBook =
-      TranslationBook(outputDir.resolve("test_with_names.xlsx").inputStream(), Path.of("test_with_names.xlsx"))
+      TranslationBookIO().read(outputDir.resolve("test_with_names.xlsx").inputStream(), Path.of("test_with_names.xlsx"))
     assertEquals(2, translatedBook.translationBook.size)
     assertTrue(translatedBook.translationBook[0] is TranslationData.TranslationDataWithNameData)
     assertEquals("Привет!", translatedBook.translationBook[0].translate)
@@ -143,12 +143,12 @@ class TranslationBookServiceIntegrationTest {
 
     // Create service with minimal dialog provider to handle quotes
     val service = TranslationBookService(
-      tempDir,
-      "EN",
-      "test-game",
-      namesService = NamesService(emptyMap()),
-      dialogProvider = ProvidersCollection(listOf(MinimalDialogProvider())),
-      translator = fakeTranslator
+      TranslationConfig(
+        tempDir,
+        namesService = NamesService(),
+        dialogProvider = ProvidersCollection(listOf(MinimalDialogProvider())),
+        translator = fakeTranslator
+      )
     )
     service.translate()
 
@@ -178,7 +178,7 @@ class TranslationBookServiceIntegrationTest {
     // Wait a bit to ensure file is written
     Thread.sleep(1000)
 
-    val translatedBook = TranslationBook(outputFile.inputStream(), Path.of("test.xlsx"))
+    val translatedBook = TranslationBookIO().read(outputFile.inputStream(), Path.of("test.xlsx"))
 
     // Skip header row (index 0) and check actual translation
     // MinimalDialogProvider.returnTransform removes quotes from the final result
@@ -200,11 +200,11 @@ class TranslationBookServiceIntegrationTest {
 
     // Create service and try to translate
     val service = TranslationBookService(
-      tempDir,
-      "EN",
-      "test-game",
-      namesService,
-      translator = fakeTranslator
+      TranslationConfig(
+        tempDir,
+        namesService,
+        translator = fakeTranslator
+      )
     )
 
     // Should throw exception due to unknown name in dialog

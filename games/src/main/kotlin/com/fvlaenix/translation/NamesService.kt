@@ -6,6 +6,8 @@ import kotlin.io.path.readLines
 
 class NamesService(private val properties: Map<String, String>) {
 
+  constructor() : this(emptyMap())
+
   constructor(name: String) : this(
     parsePropertiesFile(Path(name).readLines())
   )

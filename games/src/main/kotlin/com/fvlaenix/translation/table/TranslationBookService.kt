@@ -1,280 +1,57 @@
 package com.fvlaenix.translation.table
 
-import com.fvlaenix.text.OpenAIAPIServiceImpl
-import com.fvlaenix.text.OpenAIModelProvider
-import com.fvlaenix.translation.FilesUtil
-import com.fvlaenix.translation.NamesService
-import com.fvlaenix.translation.TOKEN
-import com.fvlaenix.translation.systemdialog.Bo10FNameDialogProvider
-import com.fvlaenix.translation.systemdialog.ElmiaNameDialogProvider
-import com.fvlaenix.translation.systemdialog.ProvidersCollection
-import com.fvlaenix.translation.systemdialog.SylphNameDialogProvider
-import com.fvlaenix.translation.translator.DialogTranslation
-import com.fvlaenix.translation.translator.TextModelTranslator
-import com.fvlaenix.translation.translator.TextTranslation
-import com.fvlaenix.translation.translator.Translator
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import java.nio.file.Path
-import java.util.logging.Level
-import java.util.logging.Logger
-import kotlin.io.path.inputStream
-
-private val LOG = Logger.getLogger(TranslationBookService::class.simpleName)
 
 class TranslationBookService(
-  path: Path,
-  language: String,
-  gameId: String,
-  private val namesService: NamesService = NamesService("${gameId}_$language.properties"),
-  private val dialogProvider: ProvidersCollection = ProvidersCollection.defaultProvidersCollection(namesService),
-  // TODO redo this trash constructor
-  private val translator: Translator = TextModelTranslator(
-    OpenAIAPIServiceImpl(
-      openAI = OpenAIModelProvider.createDefaultOpenAiApi(TOKEN),
-      modelInfo = OpenAIModelProvider.GPT_4_TURBO
-    )
-  )
+  private val config: TranslationConfig
 ) {
-  private val books: List<TranslationBook> =
-    FilesUtil.getPaths(path, filter = { it.extension == "xlxs" || it.extension == "xlsx" })
-      .map { TranslationBook(it.inputStream(), path.relativize(it)) }
-  val cache: MutableMap<String, String> = books
-    .flatMap { book -> book.translationBook }
-    .filter { it.translate != null }
-    .associate { it.toTranslate to it.translate!! }
-    .toMutableMap()
+  private val repository = TranslationBookRepository()
+  private val cache = TranslationCache()
+  private val validator = TranslationValidator(config.dialogProvider)
+  private val nameExtractor = NameExtractor(config.dialogProvider)
+  private val processor = TranslationBookProcessor(
+    translator = config.translator,
+    namesService = config.namesService,
+    dialogProvider = config.dialogProvider,
+    cache = cache
+  )
+
+  private var books: List<TranslationBook> = emptyList()
+
+  init {
+    loadBooks()
+    initializeCache()
+  }
+
+  private fun loadBooks() {
+    books = repository.loadBooks(config.path)
+  }
+
+  private fun initializeCache() {
+    cache.buildFromBooks(books)
+  }
 
   suspend fun translate() = coroutineScope {
     ensureActive()
-    checkNames()
-    val countBooks = 0
-    books.forEachIndexed { index, book ->
-      println("Translate book ${book.path}")
-      try {
-        translateBook(book)
-      } catch (e: Exception) {
-        throw Exception("Exception while book ${book.name}", e)
-      }
-      if (index > countBooks && countBooks != 0) return@coroutineScope
-    }
+    validator.validateBooksOrThrow(books)
+    processor.processBooks(books)
   }
 
-  private fun filterMapKeys(map: Map<String, String>): Map<String, String> {
-    val keys = map.keys.toList() // Получаем список ключей
-    val filteredKeys = keys.filter { key ->
-      // Проверяем, что ключ не является подстрокой другого ключа
-      keys.none { other ->
-        other != key && other.contains(key)
-      }
-    }
-    // Создаем новую мапу только с отфильтрованными ключами
-    return map.filterKeys { it in filteredKeys }
+  fun write(outputPath: Path) {
+    repository.saveBooks(books, outputPath)
   }
 
-
-  private suspend fun translateBook(book: TranslationBook) = coroutineScope {
-    ensureActive()
-    var currentLine = 0
-    val countLines = 0
-    while (currentLine < book.translationBook.size) {
-      ensureActive()
-      val finishLine = getFinishLineForSubBook(book, currentLine)
-      translateSubbook(book, currentLine, finishLine)
-      currentLine = finishLine
-      if (currentLine > countLines && countLines != 0) return@coroutineScope
-    }
-    // check translation for critical names
-    book.translationBook.forEachIndexed { index, translationData ->
-      val namesTranslation = filterMapKeys(namesService.checkForName(translationData.toTranslate))
-      namesTranslation.forEach { toTranslateName, translatedName ->
-        // TODO remove somehow exceptions
-        if (translatedName == "Me") return@forEach
-        if (translatedName == "Volunteer Army") return@forEach
-        if (translatedName == "Common") return@forEach
-        if (translationData.translate?.contains(translatedName, ignoreCase = true) == false) {
-          println("Name \"$translatedName\" should be inside line \"${translationData.translate}\", but it isn't. Book: ${book.path}, line: $index")
-        }
-      }
-    }
+  fun addToCache(otherService: TranslationBookService) {
+    cache.mergeFrom(otherService.cache)
   }
 
-  private fun getFinishLineForSubBook(book: TranslationBook, startLine: Int): Int {
-    var currentLine = startLine
-    var linesWithTranslation = 0
-    while (currentLine < book.translationBook.size && linesWithTranslation < MAX_COUNT_LINES) {
-      val currentString = book.translationBook[currentLine]
-      if (currentString.translate == null) {
-        linesWithTranslation++
-      }
-      currentLine++
-    }
-    return currentLine
-  }
-
-  suspend fun translateSubbook(book: TranslationBook, startLine: Int, endLine: Int) {
-    val linesTalk = mutableMapOf<Int, ProvidersCollection.ProvidersResult>()
-    val linesWithTranslation = book.translationBook.subList(startLine, endLine)
-      .mapIndexed { index, translationData -> Pair(index, translationData) }
-    linesWithTranslation.forEach {
-      try {
-        val translation = namesService[it.second.toTranslate]
-        it.second.translate = translation
-        return@forEach
-      } catch (_: KeyNotFoundException) {
-        // ignore
-      }
-
-      if (it.second.translate != null) return@forEach
-
-      if (cache.containsKey(it.second.toTranslate)) {
-        it.second.translate = cache[it.second.toTranslate]
-      }
-    }
-    if (linesWithTranslation.isEmpty()) return
-    val lines = linesWithTranslation.mapIndexed { index, (number, translateData) ->
-      val line = translateData.toTranslate
-      val startResult = try {
-        dialogProvider.get(line)
-      } catch (e: Exception) {
-        throw Exception("Exception while ${startLine + number + 1} line", e)
-      }
-      linesTalk[index] = startResult
-      when (translateData) {
-        is TranslationData.TranslationSimpleData -> {
-          when (val firstSystem = startResult.system.firstOrNull()) {
-            is Bo10FNameDialogProvider.Bo10FDialog -> DialogTranslation(
-              firstSystem.name,
-              startResult.result,
-              translateData.translate
-            )
-
-            is ElmiaNameDialogProvider.ElmiaDialog -> DialogTranslation(
-              firstSystem.name,
-              startResult.result,
-              translateData.translate
-            )
-
-            is SylphNameDialogProvider.SylphDialog -> DialogTranslation(
-              firstSystem.name,
-              startResult.result,
-              translateData.translate
-            )
-
-            else -> TextTranslation(startResult.result, translateData.translate)
-          }
-        }
-
-        is TranslationData.TranslationDataWithNameData -> DialogTranslation(
-          translateData.name,
-          startResult.result,
-          translateData.translate
-        )
-      }
-    }
-    val result = try {
-      translator.translate(lines)
-    } catch (e: Exception) {
-      LOG.log(Level.SEVERE, "Exception during translation book ${book.name}", e)
-      null
-    }
-    if (result != null) {
-      linesWithTranslation.zip(result).forEachIndexed { index, pair ->
-        val translation = pair.second.translation
-        if (translation != null) {
-          var resultLine = translation
-          if (resultLine.startsWith("\"") && resultLine.endsWith("\"")) {
-            resultLine = resultLine.substring(1, resultLine.length - 1).trim()
-          }
-          if (linesTalk.containsKey(index)) {
-            resultLine = dialogProvider.restore(resultLine, linesTalk[index]!!)
-          }
-          cache[pair.first.second.toTranslate] = resultLine
-          pair.first.second.translate = resultLine
-        }
-      }
-    }
-  }
-
-  /**
-   * Extracts all unique names from all translation books using system dialog providers
-   * @return Set of unique names found across all books
-   */
   fun extractUniqueNames(): Set<String> {
-    val uniqueNames = mutableSetOf<String>()
-
-    books.forEach { book ->
-      book.translationBook.forEach { translationData ->
-        try {
-          val result = dialogProvider.get(translationData.toTranslate)
-          result.system.forEach { systemDialog ->
-            when (systemDialog) {
-              is ElmiaNameDialogProvider.ElmiaDialog -> {
-                // The name is already translated by NamesService in the provider
-                // We need to get the original name, let's extract it from the original text
-                val originalText = translationData.toTranslate
-                val positionOfSplit = originalText.indexOfFirst { it == '\n' }
-                if (positionOfSplit != -1) {
-                  val originalName = originalText.split("\n")[0]
-                  uniqueNames.add(originalName)
-                }
-              }
-
-              is SylphNameDialogProvider.SylphDialog -> {
-                // Extract original name from the pattern \\n<name>
-                val originalText = translationData.toTranslate
-                val match = SylphNameDialogProvider.REGEX.find(originalText)
-                match?.let {
-                  val originalName = it.groups[1]?.value
-                  originalName?.let { name -> uniqueNames.add(name) }
-                }
-              }
-
-              is Bo10FNameDialogProvider.Bo10FDialog -> {
-                // Extract original name from the pattern NAME at the beginning
-                val originalText = translationData.toTranslate
-                val match = Bo10FNameDialogProvider.REGEX.find(originalText)
-                match?.let {
-                  val originalName = it.groups[0]?.value?.trim()
-                  originalName?.let { name -> uniqueNames.add(name) }
-                }
-              }
-
-              else -> throw Exception("Unknown dialog type ${systemDialog::class.simpleName}")
-            }
-          }
-        } catch (e: KeyNotFoundException) {
-          uniqueNames.add(e.notFoundKey)
-        } catch (e: Exception) {
-          // Skip entries that cause errors in dialog processing
-          return@forEach
-        }
-      }
-    }
-
-    return uniqueNames
+    return nameExtractor.extractUniqueNames(books)
   }
 
-  private fun checkNames() {
-    val notFoundKeys = mutableListOf<String>()
-    books.forEachIndexed books@{ _, book ->
-      notFoundKeys.addAll(book.checkNames(dialogProvider))
-    }
-    if (notFoundKeys.isNotEmpty()) {
-      System.err.println(notFoundKeys.distinct().joinToString("\n"))
-      throw IllegalStateException("A lot of keys not found. All written to err")
-    }
-  }
-
-  fun write(path: Path) {
-    books.forEach {
-      it.write(path)
-    }
-  }
+  fun getCache(): Map<String, String> = cache.getCache()
 
   class KeyNotFoundException(val notFoundKey: String) : IllegalStateException("Can't found key for $notFoundKey")
-
-  fun addToCache(anotherBookService: TranslationBookService) {
-    cache.putAll(anotherBookService.cache)
-  }
 }

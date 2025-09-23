@@ -96,11 +96,11 @@ abstract class AbstractTranslationBookServiceTest {
 
   protected fun createTranslationBookService(): TranslationBookService {
     return TranslationBookService(
-      path = tempDir,
-      language = "en",
-      gameId = "test",
-      translator = translator,
-      namesService = namesService
+      TranslationConfig(
+        path = tempDir,
+        namesService = NamesService(),
+        translator = translator
+      )
     )
   }
 }

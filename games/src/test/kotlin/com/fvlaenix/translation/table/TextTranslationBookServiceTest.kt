@@ -33,7 +33,7 @@ class TextTranslationBookServiceTest : AbstractTranslationBookServiceTest() {
     // Verify translation was cached
     assertEquals(
       "Translated text",
-      translationBookService.cache["Original text to translate"]
+      translationBookService.getCache()["Original text to translate"]
     )
   }
 
@@ -58,11 +58,11 @@ class TextTranslationBookServiceTest : AbstractTranslationBookServiceTest() {
     // Verify translations were cached
     assertEquals(
       "First translation",
-      translationBookService.cache["First text"]
+      translationBookService.getCache()["First text"]
     )
     assertEquals(
       "Second translation",
-      translationBookService.cache["Second text"]
+      translationBookService.getCache()["Second text"]
     )
   }
 }

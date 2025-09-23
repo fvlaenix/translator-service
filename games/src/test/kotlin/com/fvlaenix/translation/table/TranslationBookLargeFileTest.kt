@@ -84,12 +84,12 @@ class TranslationBookLargeFileTest {
     }
 
     return TranslationBookService(
-      path = path,
-      language = "RU",
-      gameId = gameId,
-      namesService = namesService,
-      dialogProvider = ProvidersCollection(emptyList()),
-      translator = translator
+      TranslationConfig(
+        path = path,
+        namesService = namesService,
+        dialogProvider = ProvidersCollection(emptyList()),
+        translator = translator
+      )
     )
   }
 
@@ -133,7 +133,7 @@ class TranslationBookLargeFileTest {
     val largeFile = tempDir.resolve("large_simple_1000.xlsx")
     createLargeSimpleFormatFile(largeFile, rowCount)
 
-    val initialBook = TranslationBook(largeFile.inputStream(), largeFile.fileName)
+    val initialBook = TranslationBookIO().read(largeFile.inputStream(), largeFile.fileName)
     assertThat(initialBook.translationBook).hasSize(rowCount)
 
     val translationService = createTranslationService(tempDir, "large-test")
@@ -148,7 +148,7 @@ class TranslationBookLargeFileTest {
     translationService.write(outputDir)
 
     val outputFile = outputDir.resolve("large_simple_1000.xlsx")
-    val resultBook = TranslationBook(outputFile.inputStream(), outputFile.fileName)
+    val resultBook = TranslationBookIO().read(outputFile.inputStream(), outputFile.fileName)
 
     assertThat(resultBook.translationBook).hasSize(rowCount)
 
@@ -187,7 +187,7 @@ class TranslationBookLargeFileTest {
     translationService.write(outputDir)
 
     val outputFile = outputDir.resolve("large_extended_2000.xlsx")
-    val resultBook = TranslationBook(outputFile.inputStream(), outputFile.fileName)
+    val resultBook = TranslationBookIO().read(outputFile.inputStream(), outputFile.fileName)
 
     assertThat(resultBook.translationBook).hasSize(rowCount)
 
@@ -233,7 +233,7 @@ class TranslationBookLargeFileTest {
     translationService.write(outputDir)
 
     val outputFile = outputDir.resolve("very_large_5000.xlsx")
-    val resultBook = TranslationBook(outputFile.inputStream(), outputFile.fileName)
+    val resultBook = TranslationBookIO().read(outputFile.inputStream(), outputFile.fileName)
 
     assertThat(resultBook.translationBook).hasSize(rowCount)
 
@@ -267,7 +267,7 @@ class TranslationBookLargeFileTest {
     translationService.write(outputDir)
 
     val outputFile = outputDir.resolve("mixed_content_1500.xlsx")
-    val resultBook = TranslationBook(outputFile.inputStream(), outputFile.fileName)
+    val resultBook = TranslationBookIO().read(outputFile.inputStream(), outputFile.fileName)
 
     assertThat(resultBook.translationBook).hasSize(rowCount)
 
@@ -286,8 +286,8 @@ class TranslationBookLargeFileTest {
 
   private fun setupVariedContentResponses() {
     testTextModelService.apply {
-      
-      (1..500).forEach { i ->
+
+    (1..500).forEach { i ->
         setTestResponse(
           "Short text $i",
           "Короткий текст $i"

@@ -41,7 +41,7 @@ class TranslationBookExcelFormatTest {
     }
     testFile.outputStream().use { workbook.write(it) }
 
-    val translationBook = TranslationBook(testFile.inputStream(), testFile.fileName)
+    val translationBook = TranslationBookIO().read(testFile.inputStream(), testFile.fileName)
 
     assertThat(translationBook.translationBook).hasSize(2)
 
@@ -84,7 +84,7 @@ class TranslationBookExcelFormatTest {
     }
     testFile.outputStream().use { workbook.write(it) }
 
-    val translationBook = TranslationBook(testFile.inputStream(), testFile.fileName)
+    val translationBook = TranslationBookIO().read(testFile.inputStream(), testFile.fileName)
 
     assertThat(translationBook.translationBook).hasSize(2)
 
@@ -120,7 +120,7 @@ class TranslationBookExcelFormatTest {
     }
     testFile.outputStream().use { workbook.write(it) }
 
-    val translationBook = TranslationBook(testFile.inputStream(), testFile.fileName)
+    val translationBook = TranslationBookIO().read(testFile.inputStream(), testFile.fileName)
 
     assertThat(translationBook.translationBook).hasSize(2)
 
@@ -162,7 +162,7 @@ class TranslationBookExcelFormatTest {
     }
     testFile.outputStream().use { workbook.write(it) }
 
-    val translationBook = TranslationBook(testFile.inputStream(), testFile.fileName)
+    val translationBook = TranslationBookIO().read(testFile.inputStream(), testFile.fileName)
 
     assertThat(translationBook.translationBook).hasSize(2)
 
@@ -203,14 +203,14 @@ class TranslationBookExcelFormatTest {
     }
     testFile.outputStream().use { originalWorkbook.write(it) }
 
-    val translationBook = TranslationBook(testFile.inputStream(), testFile.fileName)
+    val translationBook = TranslationBookIO().read(testFile.inputStream(), testFile.fileName)
 
     translationBook.translationBook[0].translate = "Измененный текст"
 
-    translationBook.write(tempDir)
+    TranslationBookIO().write(translationBook, tempDir)
 
     val outputFile = tempDir.resolve(testFile.fileName)
-    val rereadBook = TranslationBook(outputFile.inputStream(), outputFile.fileName)
+    val rereadBook = TranslationBookIO().read(outputFile.inputStream(), outputFile.fileName)
 
     assertThat(rereadBook.translationBook).hasSize(1)
     assertThat(rereadBook.translationBook[0].toTranslate).isEqualTo("Test text")
@@ -249,15 +249,15 @@ class TranslationBookExcelFormatTest {
     }
     testFile.outputStream().use { originalWorkbook.write(it) }
 
-    val translationBook = TranslationBook(testFile.inputStream(), testFile.fileName)
+    val translationBook = TranslationBookIO().read(testFile.inputStream(), testFile.fileName)
 
     (translationBook.translationBook[0] as TranslationData.TranslationDataWithNameData).translate = "Привет вселенная"
     (translationBook.translationBook[1] as TranslationData.TranslationDataWithNameData).translate = "До свидания"
 
-    translationBook.write(tempDir)
+    TranslationBookIO().write(translationBook, tempDir)
 
     val outputFile = tempDir.resolve(testFile.fileName)
-    val rereadBook = TranslationBook(outputFile.inputStream(), outputFile.fileName)
+    val rereadBook = TranslationBookIO().read(outputFile.inputStream(), outputFile.fileName)
 
     assertThat(rereadBook.translationBook).hasSize(2)
 
@@ -304,7 +304,7 @@ class TranslationBookExcelFormatTest {
     }
     testFile.outputStream().use { workbook.write(it) }
 
-    val translationBook = TranslationBook(testFile.inputStream(), testFile.fileName)
+    val translationBook = TranslationBookIO().read(testFile.inputStream(), testFile.fileName)
 
     assertThat(translationBook.translationBook).hasSize(3)
 

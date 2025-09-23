@@ -41,15 +41,15 @@ class JsonTranslationBookServiceTest : AbstractTranslationBookServiceTest() {
     // Verify translations
     assertEquals(
       "JOHN\nFirst line translated",
-      translationBookService.cache["JOHN Line one to translate"]
+      translationBookService.getCache()["JOHN Line one to translate"]
     )
     assertEquals(
       "MARY\nSecond line translated",
-      translationBookService.cache["MARY Line two to translate"]
+      translationBookService.getCache()["MARY Line two to translate"]
     )
     assertEquals(
       "PETER\nThird line translated",
-      translationBookService.cache["PETER Line three to translate"]
+      translationBookService.getCache()["PETER Line three to translate"]
     )
   }
 }
