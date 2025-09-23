@@ -12,7 +12,7 @@ import com.fvlaenix.translation.translator.Translation
  * @property textModelService Service for text model operations, used for token counting
  * @property tokenLimitFraction Maximum fraction of the model's token limit to use for each chunk
  */
-class TextSplitter(
+open class TextSplitter(
   private val textModelService: TextModelService,
   private val tokenLimitFraction: Float = 0.8f
 ) {
@@ -52,7 +52,7 @@ class TextSplitter(
    * @param transformer Function to transform translations into a string for token counting
    * @return List of batches of translations
    */
-  suspend fun createBatches(
+  open suspend fun createBatches(
     translations: List<Translation>,
     transformer: (List<Translation>) -> String
   ): List<List<Translation>> {

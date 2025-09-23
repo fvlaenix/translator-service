@@ -207,9 +207,9 @@ class TranslationBookExcelFormatTest {
 
     translationBook.translationBook[0].translate = "Измененный текст"
 
-    val outputFile = tempDir.resolve("output_simple_magic.xlsx")
     translationBook.write(tempDir)
 
+    val outputFile = tempDir.resolve(testFile.fileName)
     val rereadBook = TranslationBook(outputFile.inputStream(), outputFile.fileName)
 
     assertThat(rereadBook.translationBook).hasSize(1)
@@ -254,9 +254,9 @@ class TranslationBookExcelFormatTest {
     (translationBook.translationBook[0] as TranslationData.TranslationDataWithNameData).translate = "Привет вселенная"
     (translationBook.translationBook[1] as TranslationData.TranslationDataWithNameData).translate = "До свидания"
 
-    val outputFile = tempDir.resolve("output_extended_magic.xlsx")
     translationBook.write(tempDir)
 
+    val outputFile = tempDir.resolve(testFile.fileName)
     val rereadBook = TranslationBook(outputFile.inputStream(), outputFile.fileName)
 
     assertThat(rereadBook.translationBook).hasSize(2)

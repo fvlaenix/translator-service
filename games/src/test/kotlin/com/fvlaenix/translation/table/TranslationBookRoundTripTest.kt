@@ -1,10 +1,13 @@
 package com.fvlaenix.translation.table
 
+import com.fvlaenix.text.TextModelService
 import com.fvlaenix.translation.NamesService
 import com.fvlaenix.translation.TestConstants
+import com.fvlaenix.translation.splitter.TextSplitter
 import com.fvlaenix.translation.systemdialog.ProvidersCollection
 import com.fvlaenix.translation.textmodel.TestTextModelService
 import com.fvlaenix.translation.translator.TextModelTranslator
+import com.fvlaenix.translation.translator.Translation
 import com.fvlaenix.translation.translator.XmlModelTranslator
 import kotlinx.coroutines.test.runTest
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
@@ -26,6 +29,21 @@ class TranslationBookRoundTripTest {
 
   private lateinit var testTextModelService: TestTextModelService
   private lateinit var namesService: NamesService
+
+  /**
+   * Test implementation that wraps TextSplitter but disables batching.
+   * Each translation is processed individually to make tests more predictable.
+   */
+  private class TestTextSplitter(textModelService: TextModelService) :
+    TextSplitter(textModelService, 0.8f) {
+
+    override suspend fun createBatches(
+      translations: List<Translation>,
+      transformer: (List<Translation>) -> String
+    ): List<List<Translation>> {
+      return translations.map { listOf(it) }
+    }
+  }
 
   @BeforeEach
   fun setUp() {
@@ -50,9 +68,16 @@ class TranslationBookRoundTripTest {
     useExtendedFormat: Boolean = false
   ): TranslationBookService {
     val translator = if (useExtendedFormat) {
-      XmlModelTranslator(testTextModelService)
+      XmlModelTranslator(
+        textModelService = testTextModelService,
+        textSplitter = TestTextSplitter(testTextModelService)
+      )
     } else {
-      TextModelTranslator(testTextModelService, textPrompt = TestConstants.TEST_PROMPT)
+      TextModelTranslator(
+        textModelService = testTextModelService,
+        textSplitter = TestTextSplitter(testTextModelService),
+        textPrompt = TestConstants.TEST_PROMPT
+      )
     }
 
     return TranslationBookService(
@@ -67,54 +92,56 @@ class TranslationBookRoundTripTest {
 
   private fun setupRealisticAIResponses() {
     testTextModelService.apply {
-      // Single line translations
+      // Plain text responses for TextModelTranslator
       setTestResponse("Hello world!", "Привет мир!")
       setTestResponse("How are you today?", "Как дела сегодня?")
       setTestResponse("Good morning everyone.", "Доброе утро всем.")
       setTestResponse("The weather is nice.", "Погода хорошая.")
       setTestResponse("I need to go shopping.", "Мне нужно идти в магазин.")
-      setTestResponse("See you later tonight.", "Увидимся сегодня вечером.")
+      setTestResponse("Complete item", "Готовый элемент")
+      setTestResponse("Incomplete item", "Незавершенный элемент")
 
-      // Multi-line batch translations using helper method
+      // XML responses for XmlModelTranslator using helper method
+      setXmlTestResponse(
+        listOf("Alice" to "Hello world!"),
+        listOf("Привет мир!")
+      )
+
+      setXmlTestResponse(
+        listOf("Bob" to "How are you today?"),
+        listOf("Как дела сегодня?")
+      )
+
+      setXmlTestResponse(
+        listOf("Narrator" to "Good morning everyone."),
+        listOf("Доброе утро всем.")
+      )
+
+      setXmlTestResponse(
+        listOf("Charlie" to "The weather is nice."),
+        listOf("Погода хорошая.")
+      )
+
+      setXmlTestResponse(
+        listOf("Alice" to "I need to go shopping."),
+        listOf("Мне нужно идти в магазин.")
+      )
+
+      setXmlTestResponse(
+        listOf("Speaker1" to "Complete item"),
+        listOf("Готовый элемент")
+      )
+
+      setXmlTestResponse(
+        listOf("Speaker2" to "Incomplete item"),
+        listOf("Незавершенный элемент")
+      )
+
+      // Multi-line batch for plain text
       setTestBatchResponse(
         listOf("Hello world!", "How are you today?", "Good morning everyone."),
         listOf("Привет мир!", "Как дела сегодня?", "Доброе утро всем.")
       )
-
-      setTestBatchResponse(
-        listOf("The weather is nice.", "I need to go shopping.", "See you later tonight."),
-        listOf("Погода хорошая.", "Мне нужно идти в магазин.", "Увидимся сегодня вечером.")
-      )
-
-      // Specific batch for the failing test
-      setTestBatchResponse(
-        listOf("Hello world!", "How are you today?", "The weather is nice.", "I need to go shopping."),
-        listOf("Привет мир!", "Как дела сегодня?", "Погода хорошая.", "Мне нужно идти в магазин.")
-      )
-
-      // Two-item batches
-      setTestBatchResponse(
-        listOf("Hello world!", "How are you today?"),
-        listOf("Привет мир!", "Как дела сегодня?")
-      )
-
-      setTestBatchResponse(
-        listOf("The weather is nice.", "I need to go shopping."),
-        listOf("Погода хорошая.", "Мне нужно идти в магазин.")
-      )
-
-      // Complex phrases
-      setTestResponse(
-        "This is a longer text that might require more careful translation.",
-        "Это более длинный текст, который может потребовать более тщательного перевода."
-      )
-
-      setTestResponse(
-        "Welcome to our establishment! Please take a seat anywhere you like.",
-        "Добро пожаловать в наше заведение! Пожалуйста, садитесь где хотите."
-      )
-
-      setTestResponse("Incomplete item", "Незавершенный элемент")
     }
   }
 
@@ -224,8 +251,14 @@ class TranslationBookRoundTripTest {
 
     var translationService = createTranslationService(tempDir, "test-incremental")
 
-    // Manually update the Excel file to simulate partial completion
+    // PHASE 2: Second translation session - load and complete remaining items
+    testTextModelService.reset()
+    testTextModelService.setTestResponse("The weather is nice.", "Погода хорошая.")
+    testTextModelService.setTestResponse("I need to go shopping.", "Мне нужно идти в магазин.")
+
+    // Update the existing file instead of creating a new one
     val partialFile = tempDir.resolve("incremental.xlsx")
+    partialFile.toFile().delete() // Remove the old file first
     createSimpleFormatFile(
       partialFile, listOf(
         "Hello world!" to "Привет мир!",
@@ -235,11 +268,6 @@ class TranslationBookRoundTripTest {
         "I need to go shopping." to null
       )
     )
-
-    // PHASE 2: Second translation session - load and complete remaining items
-    testTextModelService.reset()
-    testTextModelService.setTestResponse("The weather is nice.", "Погода хорошая.")
-    testTextModelService.setTestResponse("I need to go shopping.", "Мне нужно идти в магазин.")
 
     // Create new service instance (simulates restart)
     val secondSessionService = createTranslationService(tempDir, "test-incremental")

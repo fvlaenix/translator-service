@@ -99,7 +99,16 @@ class TextModelTranslator(
       }
 
       if (nonEmptyCount < expectedNonEmptyLines) {
-        throw IncorrectTranslation("Not enough non-empty lines in response for item $i")
+        val errorDetails = if (response.length < 500 && originalBatch.size < 10) {
+          "Full response: '$response'\nOriginal texts: ${originalBatch.map { it.original }}"
+        } else {
+          "Expected $expectedNonEmptyLines non-empty lines, found $nonEmptyCount for item $i. Response had ${
+            responseLines.count {
+              it.trim().isNotEmpty()
+            }
+          } total non-empty lines out of ${responseLines.size} total lines."
+        }
+        throw IncorrectTranslation("Not enough non-empty lines in response for item $i. $errorDetails")
       }
 
       val translatedText = responseLines.subList(translatedLineStart, currentLine).joinToString("\n")

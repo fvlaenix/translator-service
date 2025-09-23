@@ -25,7 +25,7 @@ class TestTextModelService : TextModelService {
 
   fun reset() {
     responses.clear()
-    defaultResponse = "Test response"
+    defaultResponse = null
     shouldThrowError = false
     errorToThrow = null
   }
@@ -62,5 +62,56 @@ class TestTextModelService : TextModelService {
 
   fun setupTestDefaults() {
     setDefaultResponse(TestConstants.DEFAULT_TEST_RESPONSE)
+  }
+
+  fun setJsonTestResponse(originalTexts: List<String>, translatedTexts: List<String>) {
+    require(originalTexts.size == translatedTexts.size) { "Original and translated texts must have same size" }
+
+    val jsonResponse = translatedTexts.mapIndexed { index, translation ->
+      """{"text": "$translation"}"""
+    }.joinToString(",\n", "[\n", "\n]")
+
+    setTestResponse(originalTexts.joinToString("\n"), jsonResponse)
+  }
+
+  fun setJsonTestResponseWithNames(originalTexts: List<String>, names: List<String>, translatedTexts: List<String>) {
+    require(originalTexts.size == translatedTexts.size && originalTexts.size == names.size) {
+      "Original texts, names, and translated texts must have same size"
+    }
+
+    val jsonResponse = translatedTexts.mapIndexed { index, translation ->
+      """{"name": "${names[index]}", "text": "$translation"}"""
+    }.joinToString(",\n", "[\n", "\n]")
+
+    setTestResponse(originalTexts.joinToString("\n"), jsonResponse)
+  }
+
+  fun setXmlTestResponse(dialogues: List<Pair<String?, String>>, responses: List<String>) {
+    require(dialogues.size == responses.size) { "Dialogues and responses must have same size" }
+
+    val xmlBuilder = StringBuilder("<dialogues>")
+    dialogues.forEach { (speaker, text) ->
+      if (speaker != null) {
+        xmlBuilder.append("\n  <dialogue><speaker>${escapeXml(speaker)}</speaker><text>${escapeXml(text)}</text></dialogue>")
+      } else {
+        xmlBuilder.append("\n  <dialogue><text>${escapeXml(text)}</text></dialogue>")
+      }
+    }
+    xmlBuilder.append("\n</dialogues>")
+
+    val jsonResponse = responses.joinToString(",\n", "[\n", "\n]") { response ->
+      """{"text": "$response"}"""
+    }
+
+    setResponse(xmlBuilder.toString(), jsonResponse)
+  }
+
+  private fun escapeXml(text: String): String {
+    return text
+      .replace("&", "&amp;")
+      .replace("<", "&lt;")
+      .replace(">", "&gt;")
+      .replace("\"", "&quot;")
+      .replace("'", "&apos;")
   }
 }
