@@ -19,7 +19,7 @@ class Bo10FNameDialogProvider : SystemDialogProvider<Bo10FNameDialogProvider.Bo1
       val group = nameHighFounder.groups[0]!!
       return SystemDialogProvider.SystemDialogProviderResult(
         Bo10FDialog(group.value.trim()),
-        "\"" + s.substring(0, nameHighFounder.range.first) + s.substring(nameHighFounder.range.last + 1) + "\""
+        s.substring(0, nameHighFounder.range.first) + s.substring(nameHighFounder.range.last + 1)
       )
     }
     return null

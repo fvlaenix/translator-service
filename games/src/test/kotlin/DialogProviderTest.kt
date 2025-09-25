@@ -31,8 +31,8 @@ class DialogProviderTest {
   @Test
   fun `test icon`() = assertTranslationWithNames(
     "\\n<a>\\I[205]Hello...",
-    "\"\\I[205]Hello...\"",
-    "\"\\I[205]Привет...\"",
+    "\\I[205]Hello...",
+    "\\I[205]Привет...",
     listOf(
       SylphNameDialogProvider.SylphDialog("ф")
     ),

@@ -20,7 +20,7 @@ class ElmiaNameDialogProvider(
       val isLastSymbolQuot = s.indexOfLast { it == '」' } == s.length - 1
       return SystemDialogProvider.SystemDialogProviderResult(
         ElmiaDialog(replacement),
-        "「" + s.substring(positionOfOpen + 1, s.length - if (isLastSymbolQuot) 1 else 0).trim() + "」"
+        s.substring(positionOfOpen + 1, s.length - if (isLastSymbolQuot) 1 else 0).trim()
       )
     }
     return null
