@@ -78,7 +78,15 @@ class JsonModelTranslator(
 
   override fun parseResponse(response: String, originalBatch: List<Translation>): List<Translation> {
     try {
-      val jsonTranslations = JSON.decodeFromString<List<JsonObject>>(response)
+      var responseWithoutTrash = response.trim()
+      if (responseWithoutTrash.startsWith("```json") && responseWithoutTrash.endsWith("```")) {
+        responseWithoutTrash = responseWithoutTrash.removePrefix("```json").removeSuffix("```").trim()
+      }
+      if (responseWithoutTrash.startsWith("```") && responseWithoutTrash.endsWith("```")) {
+        responseWithoutTrash = responseWithoutTrash.removePrefix("```").removeSuffix("```").trim()
+      }
+
+      val jsonTranslations = JSON.decodeFromString<List<JsonObject>>(responseWithoutTrash)
 
       if (jsonTranslations.size != originalBatch.size) {
         throw IncorrectTranslation("Response size mismatch: expected ${originalBatch.size}, got ${jsonTranslations.size}")
