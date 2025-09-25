@@ -34,7 +34,7 @@ class TranslationBookRoundTripTest {
    * Test implementation that wraps TextSplitter but disables batching.
    * Each translation is processed individually to make tests more predictable.
    */
-  private class TestTextSplitter(textModelService: TextModelService) :
+  class TestTextSplitter(textModelService: TextModelService) :
     TextSplitter(textModelService, 0.8f) {
 
     override suspend fun createBatches(

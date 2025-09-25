@@ -81,7 +81,13 @@ class TranslationBookProcessor(
 
     if (linesWithTranslation.isEmpty()) return
 
-    val lines = linesWithTranslation.mapIndexed { index, (number, translateData) ->
+    val linesToTranslate = linesWithTranslation.filter { (_, translateData) ->
+      translateData.translate == null
+    }
+
+    if (linesToTranslate.isEmpty()) return
+
+    val lines = linesToTranslate.mapIndexed { index, (number, translateData) ->
       val line = translateData.toTranslate
       val startResult = try {
         dialogProvider.get(line)
@@ -131,7 +137,7 @@ class TranslationBookProcessor(
     }
 
     if (result != null) {
-      linesWithTranslation.zip(result).forEachIndexed { index, pair ->
+      linesToTranslate.zip(result).forEachIndexed { index, pair ->
         val translation = pair.second.translation
         if (translation != null) {
           var resultLine = translation
