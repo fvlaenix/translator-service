@@ -20,8 +20,24 @@ abstract class AbstractTextModelTranslator(
   protected val retries: Int = 3
 ) : Translator {
 
+  /**
+   * Exception indicating that the model’s response cannot be parsed into expected translations.
+   *
+   * Used to trigger retries and to signal format violations.
+   */
   class IncorrectTranslation(message: String?) : Exception(message)
 
+  /**
+   * Translates the given list, preserving order and already translated items.
+   *
+   * Only items with null [Translation.translation] are sent to the model. The method may split
+   * large inputs into batches, retry on parse failures via [IncorrectTranslation], and merges
+   * split results back into the original shape.
+   *
+   * @param data Input translations; items with non‑null translation are returned unchanged.
+   * @return Translated list of the same size and order as [data].
+   * @throws IncorrectTranslation When the model response cannot be parsed after all retries.
+   */
   override suspend fun translate(data: List<Translation>): List<Translation> {
     validateInput(data)
     val untranslated = data.filter { it.translation == null }
@@ -144,7 +160,17 @@ abstract class AbstractTextModelTranslator(
       .replace("'", "&apos;")
   }
 
+  /**
+   * Functional transformer that converts a batch of [Translation] into a single text input
+   * for token counting and model requests.
+   */
   fun interface TranslationTransformer {
+    /**
+     * Builds the textual representation of [translations] used for token estimation and requests.
+     *
+     * @param translations Batch to serialise into a single string.
+     * @return The combined textual representation of the batch.
+     */
     fun transform(translations: List<Translation>): String
   }
 }

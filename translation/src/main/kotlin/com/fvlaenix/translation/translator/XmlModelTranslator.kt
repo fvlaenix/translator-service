@@ -30,6 +30,9 @@ class XmlModelTranslator(
 ) {
 
   companion object {
+    /**
+     * Shared JSON instance configured to ignore unknown keys in model responses.
+     */
     val JSON = Json { ignoreUnknownKeys = true }
   }
 
