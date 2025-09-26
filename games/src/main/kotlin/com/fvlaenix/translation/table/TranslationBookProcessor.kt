@@ -15,6 +15,14 @@ import java.util.logging.Logger
 
 private val LOG = Logger.getLogger(TranslationBookProcessor::class.simpleName)
 
+/**
+ * Coordinates chunked translation of a book while preserving and restoring system dialog wrappers.
+ *
+ * The processor consults [NamesService] for name-only mappings, uses [ProvidersCollection]
+ * to strip system dialog markers prior to translation, and merges results back into the cache.
+ *
+ * Not thread-safe; designed for sequential processing per book.
+ */
 class TranslationBookProcessor(
   private val translator: Translator,
   private val namesService: NamesService,
@@ -22,6 +30,14 @@ class TranslationBookProcessor(
   private val cache: TranslationCache
 ) {
 
+  /**
+   * Translates a single [book] in chunks, filling in missing rows and updating the cache.
+   *
+   * Name-only replacements are applied first. System dialog wrappers are removed before
+   * translation and restored afterwards.
+   *
+   * @param book Book to process.
+   */
   suspend fun processBook(book: TranslationBook) = coroutineScope {
     ensureActive()
     var currentLine = 0
@@ -35,6 +51,13 @@ class TranslationBookProcessor(
     validateNameTranslations(book)
   }
 
+  /**
+   * Processes multiple books sequentially, reporting the current file path to stdout.
+   *
+   * Exceptions from individual books are wrapped with the book name for context.
+   *
+   * @param books Collection of books to translate.
+   */
   suspend fun processBooks(books: List<TranslationBook>) = coroutineScope {
     books.forEachIndexed { index, book ->
       println("Translate book ${book.path}")

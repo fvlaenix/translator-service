@@ -4,6 +4,13 @@ import com.fvlaenix.translation.table.TranslationBookService
 import kotlin.io.path.Path
 import kotlin.io.path.readLines
 
+/**
+ * Provides lookups and utilities for name translations loaded from a properties source.
+ *
+ * The service resolves exact-name mappings and can scan a line to suggest possible name replacements.
+ *
+ * @property properties Mapping of original names to their translations.
+ */
 class NamesService(private val properties: Map<String, String>) {
 
   constructor() : this(emptyMap())
@@ -37,6 +44,16 @@ class NamesService(private val properties: Map<String, String>) {
     }
   }
 
+  /**
+   * Returns the translated name for the given key.
+   *
+   * Returns an empty string when the key is empty. Throws [TranslationBookService.KeyNotFoundException]
+   * if the key is not present in the properties.
+   *
+   * @param name Original name key to resolve.
+   * @return The mapped translation, or an empty string when `name` is empty.
+   * @throws TranslationBookService.KeyNotFoundException When no mapping exists for [name].
+   */
   operator fun get(name: String): String {
     if (name == "") return ""
     return properties[name] ?: throw TranslationBookService.KeyNotFoundException(name)

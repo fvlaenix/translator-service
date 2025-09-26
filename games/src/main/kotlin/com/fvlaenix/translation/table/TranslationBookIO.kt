@@ -7,8 +7,24 @@ import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.name
 
+/**
+ * Reads and writes translation books in XLSX format.
+ *
+ * Uses Apache POI for reading and the excelkt DSL for writing.
+ */
 class TranslationBookIO {
 
+  /**
+   * Reads a translation book from an XLSX input stream.
+   *
+   * The method attempts to detect an optional header and chooses the appropriate
+   * row layout for [TranslationData]. Errors are wrapped into [TranslationBookIOException].
+   *
+   * @param inputStream Source XLSX stream. The caller must provide a valid workbook.
+   * @param path Relative path used to populate [TranslationBook.path] and [TranslationBook.name].
+   * @return Parsed [TranslationBook] instance.
+   * @throws TranslationBookIOException When the input cannot be parsed as a supported workbook.
+   */
   fun read(inputStream: InputStream, path: Path): TranslationBook {
     return try {
       val workbook = XSSFWorkbook(inputStream)
@@ -81,6 +97,15 @@ class TranslationBookIO {
     }
   }
 
+  /**
+   * Writes a translation book to an XLSX file under the given directory.
+   *
+   * The directory structure is created as needed. Errors are wrapped into [TranslationBookIOException].
+   *
+   * @param book Book to serialise.
+   * @param parentDirectory Root directory where the book path will be created.
+   * @throws TranslationBookIOException When writing fails.
+   */
   fun write(book: TranslationBook, parentDirectory: Path) {
     try {
       val writePath = parentDirectory.resolve(book.path)
@@ -128,4 +153,9 @@ class TranslationBookIO {
   }
 }
 
+/**
+ * Signals failures during reading or writing of translation books.
+ *
+ * Wraps underlying IO and parsing exceptions with a descriptive message.
+ */
 class TranslationBookIOException(message: String, cause: Throwable? = null) : Exception(message, cause)

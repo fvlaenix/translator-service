@@ -9,6 +9,16 @@ import com.fvlaenix.translation.translator.TextModelTranslator
 import com.fvlaenix.translation.translator.Translator
 import java.nio.file.Path
 
+/**
+ * Configuration for translation processing.
+ *
+ * Bundles IO path, naming rules, dialog parsing, and the translator implementation to use.
+ *
+ * @property path Base directory containing translation books or game files.
+ * @property namesService Service for resolving name mappings.
+ * @property dialogProvider Provider pipeline for extracting/removing system dialog markers.
+ * @property translator Translator used to produce text translations.
+ */
 data class TranslationConfig(
   val path: Path,
   val namesService: NamesService,
