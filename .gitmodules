@@ -1,3 +1,9 @@
 [submodule "discord-bots-rpc"]
 	path = discord-bots-rpc
-	url = git@github.com:fvlaenix/discord-bots-rpc.git
+	url = https://github.com/fvlaenix/discord-bots-rpc.git
+	branch = master
+
+[submodule "ai-services"]
+    path = ai-services
+    url = https://github.com/fvlaenix/ai-services.git
+    branch = master

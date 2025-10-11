@@ -48,4 +48,3 @@ bin/
 /src/main/resources/summarizer-prompt.txt
 /ai_logs/
 /result/
-/local.gradle.properties
