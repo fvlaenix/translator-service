@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Explicit tag (vX.Y.Z). Leave empty to auto-bump."
+        required: false
+        type: string
+      bump:
+        description: "Version bump when tag is empty or equals latest."
+        required: true
+        type: choice
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Compute tag
+        id: compute
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+
+          pattern='^v[0-9]+\.[0-9]+\.[0-9]+$'
+          input_tag="${{ inputs.tag }}"
+          bump="${{ inputs.bump }}"
+
+          last_tag=$(git tag --list 'v*' --sort=-v:refname | head -n 1)
+          if [ -z "$last_tag" ]; then
+            last_tag="v0.0.0"
+          fi
+
+          if [ -n "$input_tag" ]; then
+            if ! [[ "$input_tag" =~ $pattern ]]; then
+              echo "Invalid tag format: $input_tag" >&2
+              exit 1
+            fi
+            if [ "$input_tag" = "$last_tag" ]; then
+              bump="patch"
+              input_tag=""
+            else
+              new_tag="$input_tag"
+            fi
+          fi
+
+          if [ -z "${input_tag:-}" ]; then
+            version="${last_tag#v}"
+            IFS='.' read -r major minor patch <<< "$version"
+            case "$bump" in
+              major) major=$((major + 1)); minor=0; patch=0 ;;
+              minor) minor=$((minor + 1)); patch=0 ;;
+              patch) patch=$((patch + 1)) ;;
+              *) echo "Unknown bump: $bump" >&2; exit 1 ;;
+            esac
+            new_tag="v${major}.${minor}.${patch}"
+          fi
+
+          if git rev-parse "$new_tag" >/dev/null 2>&1; then
+            echo "Tag already exists: $new_tag" >&2
+            exit 1
+          fi
+
+          echo "tag=$new_tag" >> "$GITHUB_OUTPUT"
+          echo "New tag: $new_tag"
+
+      - name: Create and push tag
+        run: |
+          set -euo pipefail
+          tag="${{ steps.compute.outputs.tag }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$tag"
+          git push origin "$tag"
