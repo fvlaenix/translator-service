@@ -12,6 +12,7 @@ dependencyResolutionManagement {
   @Suppress("UnstableApiUsage")
   repositories {
     mavenCentral()
+    maven("https://jitpack.io")
   }
 }
 
@@ -30,6 +31,3 @@ include(":review")
 include(":server")
 
 rootProject.name = "translator-service"
-
-// Include ai-services as a composite build
-includeBuild("ai-services")

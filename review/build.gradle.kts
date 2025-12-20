@@ -6,7 +6,7 @@ plugins {
 dependencies {
   implementation(project(":core"))
   implementation(project(":translation"))
-  implementation("ai-services:core")
+  implementation(libs.ai.services)
 
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")

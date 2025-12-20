@@ -11,7 +11,7 @@ plugins {
 dependencies {
   implementation(project(":core"))
   implementation(project(":translation"))
-  implementation("ai-services:core")
+  implementation(libs.ai.services)
 
   implementation("io.grpc:grpc-kotlin-stub:1.4.0")
   implementation("com.google.protobuf:protobuf-java:3.16.3")

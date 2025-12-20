@@ -5,7 +5,7 @@ plugins {
 }
 
 dependencies {
-  implementation("ai-services:core")
+  implementation(libs.ai.services)
   api(platform("com.aallam.openai:openai-client-bom:3.5.1"))
   api("com.aallam.openai:openai-client")
   implementation("com.aallam.ktoken:ktoken:0.4.0")
@@ -18,7 +18,7 @@ dependencies {
   implementation("org.apache.logging.log4j:log4j-core:2.20.0")
   implementation("org.apache.logging.log4j:log4j-api:2.20.0")
 
-  testFixturesImplementation("ai-services:core")
+  testFixturesImplementation(libs.ai.services)
   testFixturesApi(platform("com.aallam.openai:openai-client-bom:3.5.1"))
   testFixturesApi("com.aallam.openai:openai-client")
 }

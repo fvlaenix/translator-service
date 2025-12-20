@@ -6,7 +6,7 @@ plugins {
 
 dependencies {
   implementation(project(":core"))
-  implementation("ai-services:core")
+  implementation(libs.ai.services)
   implementation(project(":translation"))
 
   implementation("io.github.evanrupert:excelkt:1.0.2")
