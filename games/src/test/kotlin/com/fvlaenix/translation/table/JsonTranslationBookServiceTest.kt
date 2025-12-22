@@ -10,7 +10,10 @@ class JsonTranslationBookServiceTest : AbstractTranslationBookServiceTest() {
 
   @BeforeEach
   fun setUp() {
-    translator = JsonModelTranslator(testOpenAIService)
+    translator = JsonModelTranslator(
+      textModelService = testOpenAIService,
+      jsonPrompt = "Translate the following JSON array of dialog entries."
+    )
   }
 
   @Test
