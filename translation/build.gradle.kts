@@ -75,6 +75,17 @@ val dokkaJavadocJar by tasks.registering(Jar::class) {
 }
 
 publishing {
+  repositories {
+    maven {
+      name = "nexus"
+      url = uri("https://maven.fvlaenix.com/repository/maven-releases/")
+      credentials {
+        username = System.getenv("NEXUS_USERNAME")
+        password = System.getenv("NEXUS_PASSWORD")
+      }
+    }
+  }
+
   publications {
     create<MavenPublication>("maven") {
       from(components["java"])
