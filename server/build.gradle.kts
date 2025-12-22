@@ -13,16 +13,16 @@ dependencies {
   implementation(project(":translation"))
   implementation(libs.ai.services)
 
-  implementation("io.grpc:grpc-kotlin-stub:1.4.0")
-  implementation("com.google.protobuf:protobuf-java:3.16.3")
-  implementation("com.google.protobuf:protobuf-kotlin:3.24.4")
-  runtimeOnly("io.grpc:grpc-netty-shaded:1.59.0")
-  implementation("io.grpc:grpc-protobuf:1.59.0")
-  implementation("io.grpc:grpc-stub:1.59.0")
-  compileOnly("org.apache.tomcat:annotations-api:6.0.53")
+  implementation(libs.grpc.kotlin.stub)
+  implementation(libs.protobuf.java)
+  implementation(libs.protobuf.kotlin)
+  runtimeOnly(libs.grpc.netty.shaded)
+  implementation(libs.grpc.protobuf)
+  implementation(libs.grpc.stub)
+  compileOnly(libs.tomcat.annotations.api)
 
-  implementation("org.apache.logging.log4j:log4j-core:2.20.0")
-  implementation("org.apache.logging.log4j:log4j-api:2.20.0")
+  implementation(libs.log4j.core)
+  implementation(libs.log4j.api)
 
   protobuf(files("../discord-bots-rpc/gpt-request.proto", "../discord-bots-rpc/is-alive.proto"))
 }
@@ -55,14 +55,14 @@ tasks.register<ShadowJar>("runServerJar") {
 
 protobuf {
   protoc {
-    artifact = "com.google.protobuf:protoc:3.24.4"
+    artifact = "com.google.protobuf:protoc:${libs.versions.protobufKotlin.get()}"
   }
   plugins {
     id("grpc") {
-      artifact = "io.grpc:protoc-gen-grpc-java:1.59.0"
+      artifact = "io.grpc:protoc-gen-grpc-java:${libs.versions.grpc.get()}"
     }
     create("grpckt") {
-      artifact = "io.grpc:protoc-gen-grpc-kotlin:1.4.0:jdk8@jar"
+      artifact = "io.grpc:protoc-gen-grpc-kotlin:${libs.versions.grpcKotlin.get()}:jdk8@jar"
     }
   }
   generateProtoTasks {

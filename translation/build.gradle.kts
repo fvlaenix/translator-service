@@ -4,7 +4,7 @@ plugins {
   kotlin("jvm")
   application
   `java-test-fixtures`
-  id("org.jetbrains.dokka") version "2.0.0"
+  alias(libs.plugins.dokka)
   `maven-publish`
 }
 
@@ -49,14 +49,14 @@ allprojects {
 dependencies {
   implementation(project(":core"))
 
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
-  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+  implementation(libs.kotlinx.coroutines.core)
+  implementation(libs.kotlinx.serialization.json.core)
   implementation(libs.ai.services)
 
-  testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
-  testImplementation("org.junit.jupiter:junit-jupiter-engine:5.10.0")
-  testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.0")
-  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+  testImplementation(libs.junit.jupiter.api)
+  testImplementation(libs.junit.jupiter.engine)
+  testImplementation(libs.kotlin.test)
+  testImplementation(libs.kotlinx.coroutines.test)
   testFixturesImplementation(testFixtures(project(":core")))
 }
 

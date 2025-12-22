@@ -6,19 +6,16 @@ plugins {
 
 dependencies {
   implementation(libs.ai.services)
-  api(platform("com.aallam.openai:openai-client-bom:3.5.1"))
-  api("com.aallam.openai:openai-client")
-  implementation("com.aallam.ktoken:ktoken:0.4.0")
-  runtimeOnly("io.ktor:ktor-client-okhttp")
+  api(platform(libs.openai.client.bom))
+  api(libs.openai.client)
+  implementation(libs.ktoken)
+  runtimeOnly(libs.ktor.client.okhttp)
 
-  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+  implementation(libs.kotlinx.serialization.json.core)
 
-  implementation("org.slf4j:slf4j-api:2.0.9")
-  implementation("org.slf4j:slf4j-simple:2.0.9")
-  implementation("org.apache.logging.log4j:log4j-core:2.20.0")
-  implementation("org.apache.logging.log4j:log4j-api:2.20.0")
+  implementation(libs.bundles.logging)
 
   testFixturesImplementation(libs.ai.services)
-  testFixturesApi(platform("com.aallam.openai:openai-client-bom:3.5.1"))
-  testFixturesApi("com.aallam.openai:openai-client")
+  testFixturesApi(platform(libs.openai.client.bom))
+  testFixturesApi(libs.openai.client)
 }

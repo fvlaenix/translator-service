@@ -3,22 +3,91 @@
 # https://docs.gradle.org/current/userguide/platforms.html#sub::toml-dependencies-format
 
 [versions]
-kotlin = "2.2.10"
+kotlin = "2.2.20-RC2"
 kotlinxDatetime = "0.7.1"
 kotlinxSerializationJSON = "1.9.0"
-kotlinxCoroutines = "1.10.2"
+kotlinxCoroutines = "1.8.1"
 ai-services = "1.0.4"
+openai = "3.5.1"
+ktoken = "0.4.0"
+slf4j = "2.0.9"
+log4j = "2.20.0"
+serialization = "1.6.3"
+excelkt = "1.0.2"
+jackson = "2.16.1"
+poi = "5.2.3"
+commonsCompress = "1.26.0"
+junit = "5.10.0"
+kotlinTest = "1.9.0"
+coroutinesTest = "1.7.3"
+assertj = "3.24.2"
+mockito = "5.7.0"
+mockitoKotlin = "5.2.1"
+grpc = "1.59.0"
+grpcKotlin = "1.4.0"
+protobufJava = "3.16.3"
+protobufKotlin = "3.24.4"
+tomcatAnnotations = "6.0.53"
+dokka = "2.0.0"
+shadow = "8.1.1"
+protobufPlugin = "0.9.5"
+foojay = "0.5.0"
 
 [libraries]
-kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
-kotlinxDatetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
-kotlinxSerialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJSON" }
-kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJSON" }
+kotlinx-serialization-json-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 ai-services = { module = "com.github.fvlaenix:ai-services", version.ref = "ai-services" }
 
-# Libraries can be bundled together for easier import
+openai-client-bom = { module = "com.aallam.openai:openai-client-bom", version.ref = "openai" }
+openai-client = { module = "com.aallam.openai:openai-client" }
+ktoken = { module = "com.aallam.ktoken:ktoken", version.ref = "ktoken" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp" }
+
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j" }
+log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "log4j" }
+
+excelkt = { module = "io.github.evanrupert:excelkt", version.ref = "excelkt" }
+jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+poi = { module = "org.apache.poi:poi", version.ref = "poi" }
+poi-ooxml = { module = "org.apache.poi:poi-ooxml", version.ref = "poi" }
+commons-compress = { module = "org.apache.commons:commons-compress", version.ref = "commonsCompress" }
+
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlinTest" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlin" }
+
+grpc-kotlin-stub = { module = "io.grpc:grpc-kotlin-stub", version.ref = "grpcKotlin" }
+protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobufJava" }
+protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "protobufKotlin" }
+grpc-netty-shaded = { module = "io.grpc:grpc-netty-shaded", version.ref = "grpc" }
+grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpc" }
+grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
+tomcat-annotations-api = { module = "org.apache.tomcat:annotations-api", version.ref = "tomcatAnnotations" }
+
+protoc = { module = "com.google.protobuf:protoc", version.ref = "protobufKotlin" }
+protoc-gen-grpc-java = { module = "io.grpc:protoc-gen-grpc-java", version.ref = "grpc" }
+protoc-gen-grpc-kotlin = { module = "io.grpc:protoc-gen-grpc-kotlin", version.ref = "grpcKotlin" }
+
 [bundles]
-kotlinxEcosystem = ["kotlinxDatetime", "kotlinxSerialization", "kotlinxCoroutines"]
+kotlinxEcosystem = ["kotlinx-datetime", "kotlinx-serialization-json", "kotlinx-coroutines-core"]
+logging = ["slf4j-api", "slf4j-simple", "log4j-core", "log4j-api"]
+jackson = ["jackson-core", "jackson-databind"]
+poi = ["poi", "poi-ooxml", "commons-compress"]
 
 [plugins]
-kotlinPluginSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+protobuf = { id = "com.google.protobuf", version.ref = "protobufPlugin" }
+foojay = { id = "org.gradle.toolchains.foojay-resolver-convention", version.ref = "foojay" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }

@@ -8,16 +8,16 @@ dependencies {
   implementation(project(":translation"))
   implementation(libs.ai.services)
 
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
-  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
-  implementation(platform("com.aallam.openai:openai-client-bom:3.5.1"))
-  implementation("com.aallam.openai:openai-client")
-  implementation("com.aallam.ktoken:ktoken:0.4.0")
+  implementation(libs.kotlinx.coroutines.core)
+  implementation(libs.kotlinx.serialization.json.core)
+  implementation(platform(libs.openai.client.bom))
+  implementation(libs.openai.client)
+  implementation(libs.ktoken)
 
-  testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
-  testImplementation("org.junit.jupiter:junit-jupiter-engine:5.10.0")
-  testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.0")
-  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+  testImplementation(libs.junit.jupiter.api)
+  testImplementation(libs.junit.jupiter.engine)
+  testImplementation(libs.kotlin.test)
+  testImplementation(libs.kotlinx.coroutines.test)
 }
 
 tasks.test {

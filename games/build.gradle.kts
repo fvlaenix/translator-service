@@ -9,28 +9,25 @@ dependencies {
   implementation(libs.ai.services)
   implementation(project(":translation"))
 
-  implementation("io.github.evanrupert:excelkt:1.0.2")
+  implementation(libs.excelkt)
 
-  implementation("com.fasterxml.jackson.core:jackson-core:2.16.1")
-  implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+  implementation(libs.bundles.jackson)
+  implementation(libs.kotlinx.coroutines.core)
 
   // Apache POI dependencies
-  implementation("org.apache.poi:poi:5.2.3")
-  implementation("org.apache.poi:poi-ooxml:5.2.3")
-  implementation("org.apache.commons:commons-compress:1.26.0")
+  implementation(libs.bundles.poi)
 
-  testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
-  testImplementation("org.junit.jupiter:junit-jupiter-engine:5.10.0")
-  testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.0")
-  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+  testImplementation(libs.junit.jupiter.api)
+  testImplementation(libs.junit.jupiter.engine)
+  testImplementation(libs.kotlin.test)
+  testImplementation(libs.kotlinx.coroutines.test)
   testImplementation(testFixtures(project(":core")))
   testImplementation(testFixtures(project(":translation")))
 
   // Additional test dependencies for comprehensive testing
-  testImplementation("org.assertj:assertj-core:3.24.2")
-  testImplementation("org.mockito:mockito-core:5.7.0")
-  testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+  testImplementation(libs.assertj.core)
+  testImplementation(libs.mockito.core)
+  testImplementation(libs.mockito.kotlin)
 }
 
 tasks.test {
