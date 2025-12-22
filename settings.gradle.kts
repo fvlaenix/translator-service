@@ -13,6 +13,7 @@ dependencyResolutionManagement {
   repositories {
     mavenCentral()
     maven("https://jitpack.io")
+    maven("https://maven.fvlaenix.com/repository/maven-public/")
   }
 }
 

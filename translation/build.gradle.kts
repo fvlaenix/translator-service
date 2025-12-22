@@ -24,28 +24,27 @@ fun gitExactTag(): String? {
   }
 }
 
-fun resolveVersion(): String {
-  val cliVersion = (findProperty("version") as? String)
-    ?.takeIf { it.isNotBlank() && it != "unspecified" }
-  val normalizedCliVersion = when {
-    cliVersion == null -> null
-    cliVersion.matches(Regex("v\\d+\\.\\d+\\.\\d+")) -> cliVersion.removePrefix("v")
-    cliVersion.matches(Regex("\\d+\\.\\d+\\.\\d+")) -> cliVersion
-    else -> null
-  }
-  if (normalizedCliVersion != null) {
-    return normalizedCliVersion
-  }
+fun Project.resolveVersion(): String {
+  val cli = findProperty("releaseVersion") as String?
+  if (!cli.isNullOrBlank()) return cli
 
-  val envTag = System.getenv("GIT_TAG")
-    ?: System.getenv("GITHUB_REF_NAME")
-  val tag = envTag?.takeIf { it.matches(Regex("v\\d+\\.\\d+\\.\\d+")) }
-    ?: gitExactTag()
-  return tag?.removePrefix("v") ?: "0.0.0-SNAPSHOT"
+  val tagPattern = Regex("^v\\d+\\.\\d+\\.\\d+$")
+  val envTag = sequenceOf(
+    System.getenv("GIT_TAG"),
+    System.getenv("GITHUB_REF_NAME")
+  ).firstOrNull { it != null && tagPattern.matches(it) }
+
+  if (envTag != null) return envTag.removePrefix("v")
+
+  return "0.0.0-SNAPSHOT"
 }
 
-group = (findProperty("group") as? String) ?: "com.github.fvlaenix"
-version = resolveVersion()
+val resolvedVersion = project.resolveVersion()
+
+allprojects {
+  group = "com.github.fvlaenix"
+  version = resolvedVersion
+}
 
 dependencies {
   implementation(project(":core"))
