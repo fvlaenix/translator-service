@@ -12,8 +12,8 @@ dependencyResolutionManagement {
   @Suppress("UnstableApiUsage")
   repositories {
     mavenCentral()
-    maven("https://jitpack.io")
     maven("https://maven.fvlaenix.com/repository/maven-public/")
+    maven("https://jitpack.io")
   }
 }
 
