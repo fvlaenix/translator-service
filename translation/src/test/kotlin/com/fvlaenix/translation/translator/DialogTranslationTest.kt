@@ -14,7 +14,10 @@ class DialogTranslationTest : AbstractTranslatorTest() {
   @BeforeEach
   fun setUp() {
     jsonMockService = MockTextModelService(100)
-    dialogTranslator = JsonModelTranslator(jsonMockService)
+    dialogTranslator = JsonModelTranslator(
+      textModelService = jsonMockService,
+      jsonPrompt = "Translate the following JSON array of dialog entries."
+    )
   }
 
   @Test
@@ -67,7 +70,10 @@ class DialogTranslationTest : AbstractTranslatorTest() {
   @Test
   fun `test very big context`() = runBlocking {
     val richContextModel = MockTextModelService(800)
-    val richContextTranslator = JsonModelTranslator(richContextModel)
+    val richContextTranslator = JsonModelTranslator(
+      textModelService = richContextModel,
+      jsonPrompt = "Translate the following JSON array of dialog entries."
+    )
     val translations = listOf(
       DialogTranslation("Narrator", "Narrator text"),
       DialogTranslation("Alice", "Hello there!"),
