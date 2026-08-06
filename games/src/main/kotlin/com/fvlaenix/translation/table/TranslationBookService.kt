@@ -24,7 +24,8 @@ class TranslationBookService(
     translator = config.translator,
     namesService = config.namesService,
     dialogProvider = config.dialogProvider,
-    cache = cache
+    cache = cache,
+    logSensitiveContent = config.logSensitiveContent
   )
 
   private var books: List<TranslationBook> = emptyList()
@@ -90,6 +91,25 @@ class TranslationBookService(
    * @return Map of source text to translated text.
    */
   fun getCache(): Map<String, String> = cache.getCache()
+
+  /**
+   * Returns row counts without exposing source or translated text.
+   */
+  fun getProgress(): TranslationProgress {
+    val rows = books.flatMap { it.translationBook }
+    val translated = rows.count { !it.translate.isNullOrBlank() }
+    return TranslationProgress(
+      totalRows = rows.size,
+      translatedRows = translated,
+      untranslatedRows = rows.size - translated
+    )
+  }
+
+  data class TranslationProgress(
+    val totalRows: Int,
+    val translatedRows: Int,
+    val untranslatedRows: Int
+  )
 
   /**
    * Indicates that a required key for name resolution could not be found.

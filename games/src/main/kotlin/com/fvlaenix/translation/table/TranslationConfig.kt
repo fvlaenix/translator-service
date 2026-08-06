@@ -28,5 +28,6 @@ data class TranslationConfig(
       openAI = OpenAIModelProvider.createDefaultOpenAiApi(TOKEN),
       modelInfo = OpenAIModelProvider.GPT_4_TURBO
     )
-  )
+  ),
+  val logSensitiveContent: Boolean = true
 )

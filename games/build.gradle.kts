@@ -43,3 +43,13 @@ tasks.register<JavaExec>("runSRPG") {
   classpath = sourceSets.main.get().runtimeClasspath
   mainClass.set("RunSRPGKt")
 }
+
+tasks.register<JavaExec>("runHeroUnderHeelFrench") {
+  classpath = sourceSets.main.get().runtimeClasspath
+  mainClass.set("HeroUnderHeelFrenchComparisonKt")
+  args(
+    providers.gradleProperty("model")
+      .orElse("all")
+      .get()
+  )
+}

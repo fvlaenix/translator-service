@@ -7,7 +7,9 @@ import com.fvlaenix.translation.splitter.TextSplitter
 import com.fvlaenix.translation.summarizer.NoOpSummarizer
 import com.fvlaenix.translation.summarizer.Summarizer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Translator that handles translations using XML input format with JSON output.
@@ -19,14 +21,20 @@ class XmlModelTranslator(
   globalContext: GlobalContext? = null,
   characterContexts: List<CharacterContext> = emptyList(),
   summarizer: Summarizer = NoOpSummarizer(),
-  retries: Int = 3
+  retries: Int = 3,
+  private val targetLanguage: String = "English",
+  private val translationGuidance: List<String> = listOf(
+    "Do not use archaic or outdated words; favor contemporary, natural language."
+  ),
+  logSensitiveErrors: Boolean = true
 ) : AbstractTextModelTranslator(
   textModelService = textModelService,
   textSplitter = textSplitter,
   globalContext = globalContext,
   characterContexts = characterContexts,
   summarizer = summarizer,
-  retries = retries
+  retries = retries,
+  logSensitiveErrors = logSensitiveErrors
 ) {
 
   companion object {
@@ -57,8 +65,8 @@ class XmlModelTranslator(
   </instruction>
   <format>JSON</format>
   <rules>
-    <rule>You are translating to English.</rule>
-    <rule>Do not use archaic or outdated words; favor contemporary, natural language.</rule>
+    <rule>You are translating to ${escapeXml(targetLanguage)}.</rule>
+${translationGuidance.joinToString("\n") { "    <rule>${escapeXml(it)}</rule>" }}
     <rule>Preserve each character's unique speech patterns and tone.</rule>
     <rule>Maintain the same number of lines in the output JSON as there are dialogue entries in the input.</rule>
     <rule>Do not include any extra keys or metadata—only "name" (if present) and "text."</rule>
@@ -167,17 +175,24 @@ class XmlModelTranslator(
 
       return originalBatch.mapIndexed { index, translation ->
         val jsonTranslation = jsonTranslations[index]
+        val textElement = jsonTranslation["text"]
+        val translatedText = if (textElement == null || textElement is JsonNull) {
+          null
+        } else {
+          textElement.jsonPrimitive.content
+        }?.takeIf { it.isNotBlank() }
+          ?: throw IncorrectTranslation("Response entry $index has missing or blank text")
 
         when (translation) {
           is TextTranslation -> TextTranslation(
             original = translation.original,
-            translation = jsonTranslation["text"]?.toString()?.trim('"')
+            translation = translatedText
           )
 
           is DialogTranslation -> DialogTranslation(
             name = translation.name,
             original = translation.original,
-            translation = jsonTranslation["text"]?.toString()?.trim('"')
+            translation = translatedText
           )
         }
       }

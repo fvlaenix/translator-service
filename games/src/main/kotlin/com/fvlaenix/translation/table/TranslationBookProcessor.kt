@@ -27,7 +27,8 @@ class TranslationBookProcessor(
   private val translator: Translator,
   private val namesService: NamesService,
   private val dialogProvider: ProvidersCollection,
-  private val cache: TranslationCache
+  private val cache: TranslationCache,
+  private val logSensitiveContent: Boolean = true
 ) {
 
   /**
@@ -155,7 +156,11 @@ class TranslationBookProcessor(
     val result = try {
       translator.translate(lines)
     } catch (e: Exception) {
-      LOG.log(Level.SEVERE, "Exception during translation of book ${book.name}", e)
+      if (logSensitiveContent) {
+        LOG.log(Level.SEVERE, "Exception during translation of book ${book.name}", e)
+      } else {
+        LOG.log(Level.SEVERE, "Translation failed for book ${book.name} (${e::class.simpleName})")
+      }
       null
     }
 
@@ -186,7 +191,11 @@ class TranslationBookProcessor(
         if (translatedName == "Common") return@forEach
 
         if (translationData.translate?.contains(translatedName, ignoreCase = true) == false) {
-          println("Name \"$translatedName\" should be inside line \"${translationData.translate}\", but it isn't. Book: ${book.path}, line: $index")
+          if (logSensitiveContent) {
+            println("Name \"$translatedName\" should be inside line \"${translationData.translate}\", but it isn't. Book: ${book.path}, line: $index")
+          } else {
+            println("A required name is absent from the translation. Book: ${book.path}, line: $index")
+          }
         }
       }
     }

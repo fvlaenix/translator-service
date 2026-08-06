@@ -17,7 +17,8 @@ abstract class AbstractTextModelTranslator(
   protected val globalContext: GlobalContext? = null,
   protected val characterContexts: List<CharacterContext> = emptyList(),
   protected val summarizer: Summarizer = NoOpSummarizer(),
-  protected val retries: Int = 3
+  protected val retries: Int = 3,
+  protected val logSensitiveErrors: Boolean = true
 ) : Translator {
 
   /**
@@ -129,7 +130,11 @@ abstract class AbstractTextModelTranslator(
           translatedBatches.add(translatedBatch)
           break
         } catch (e: Exception) {
-          println("Batch rejected: ${e.message}")
+          if (logSensitiveErrors) {
+            println("Batch rejected: ${e.message}")
+          } else {
+            println("Batch rejected: ${e::class.simpleName}")
+          }
           retriesLeft--
           if (retriesLeft == 0) throw e
         }
