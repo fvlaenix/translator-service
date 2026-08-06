@@ -22,7 +22,7 @@ class POTest {
   fun `export recursively writes bare two-column workbooks understood by generic reader`() {
     val source = temp.resolve("source")
     writePo(source.resolve("a/a.po"), simplePo("One", "Un"))
-    writePo(source.resolve("deep/b/b.po"), simplePo("Two", "Two"))
+    writePo(source.resolve("deep/b/b.PO"), simplePo("Two", "Two"))
     val tables = temp.resolve("tables")
 
     PO(source).createTranslationTables(tables)
@@ -30,7 +30,7 @@ class POTest {
     assertThat(tables.resolve("a/a.xlsx")).isRegularFile
     assertThat(tables.resolve("a/a.po.keys.txt")).isRegularFile
     assertThat(tables.resolve("deep/b/b.xlsx")).isRegularFile
-    assertThat(tables.resolve("deep/b/b.po.keys.txt")).isRegularFile
+    assertThat(tables.resolve("deep/b/b.PO.keys.txt")).isRegularFile
     val exported = XSSFWorkbook(tables.resolve("a/a.xlsx").inputStream())
     exported.use { workbook: XSSFWorkbook ->
       assertThat(workbook.numberOfSheets).isEqualTo(1)
@@ -140,6 +140,28 @@ class POTest {
 
     PO(source).patchFromTranslationTables(tables, temp.resolve("output"))
 
+    assertThat(temp.resolve("output/game.po").readText()).contains("msgstr \"Bonjour\"")
+  }
+
+  @Test
+  fun `workbook rewritten by generic TranslationBookIO reinjects`() {
+    val source = temp.resolve("source")
+    writePo(source.resolve("game.po"), simplePo("Hello", "Hello"))
+    val tables = temp.resolve("tables")
+    PO(source).createTranslationTables(tables)
+    val workbookPath = tables.resolve("game.xlsx")
+    val io = TranslationBookIO()
+    val book = workbookPath.inputStream().use { io.read(it, Path.of("game.xlsx")) }
+    book.translationBook.single().translate = "Bonjour"
+
+    io.write(book, tables)
+
+    XSSFWorkbook(workbookPath.inputStream()).use { workbook ->
+      assertThat(workbook.getSheetAt(0).getRow(0).lastCellNum).isEqualTo(3)
+      assertThat(workbook.getSheetAt(0).getRow(0).getCell(0).stringCellValue).isEqualTo("fvlaenix-magic-words")
+      assertThat(workbook.getSheetAt(0).getRow(1).getCell(0).stringCellValue).isEqualTo("totranslate")
+    }
+    PO(source).patchFromTranslationTables(tables, temp.resolve("output"))
     assertThat(temp.resolve("output/game.po").readText()).contains("msgstr \"Bonjour\"")
   }
 

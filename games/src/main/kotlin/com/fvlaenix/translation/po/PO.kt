@@ -12,6 +12,7 @@ import java.util.Base64
 import kotlin.io.path.createDirectories
 import kotlin.io.path.inputStream
 import kotlin.io.path.name
+import kotlin.io.path.nameWithoutExtension
 import kotlin.io.path.outputStream
 
 /** Converts a tree of singular gettext PO files to sidecar-bound, two-column workbooks. */
@@ -71,8 +72,8 @@ class PO(private val sourceRoot: Path) {
     }
   }
 
-  private fun Path.xlsxName(): Path = parent?.resolve("${fileName.toString().removeSuffix(".po")}.xlsx")
-    ?: Path.of("${fileName.toString().removeSuffix(".po")}.xlsx")
+  private fun Path.xlsxName(): Path = parent?.resolve("${fileName.nameWithoutExtension}.xlsx")
+    ?: Path.of("${fileName.nameWithoutExtension}.xlsx")
 
   private fun Path.sidecarName(): Path = parent?.resolve("${fileName}.keys.txt") ?: Path.of("${fileName}.keys.txt")
 
@@ -95,9 +96,13 @@ class PO(private val sourceRoot: Path) {
         XSSFWorkbook(input).use { workbook ->
           if (workbook.numberOfSheets != 1) fail(source, "workbook must contain exactly one sheet: $path")
           val sheet = workbook.getSheetAt(0)
-          val rows = sheet.toList().filterNot { row ->
+          val worksheetRows = sheet.toList().filterNot { row ->
             (0 until row.lastCellNum.coerceAtLeast(0)).all { cellText(row.getCell(it)).isBlank() }
-          }.mapIndexed { index, row ->
+          }
+          val dataRows = if (
+            worksheetRows.size >= 2 && isMagicRow(worksheetRows[0]) && isGenericHeader(worksheetRows[1])
+          ) worksheetRows.drop(2) else worksheetRows
+          val rows = dataRows.mapIndexed { index, row ->
             if (row.firstCellNum < 0 || row.lastCellNum != 2.toShort()) {
               fail(source, "worksheet row ${index + 1} must contain exactly two columns: $path")
             }
@@ -117,6 +122,15 @@ class PO(private val sourceRoot: Path) {
     if (cell.cellType != CellType.STRING) throw IllegalStateException("non-text worksheet cell")
     return cell.stringCellValue
   }
+
+  private fun isMagicRow(row: org.apache.poi.ss.usermodel.Row): Boolean =
+    row.firstCellNum == 0.toShort() && row.lastCellNum == 3.toShort() &&
+      cellText(row.getCell(0)) == "fvlaenix-magic-words" &&
+      cellText(row.getCell(1)) == "SRPG" && cellText(row.getCell(2)) == "SRPG"
+
+  private fun isGenericHeader(row: org.apache.poi.ss.usermodel.Row): Boolean =
+    row.firstCellNum == 0.toShort() && row.lastCellNum == 2.toShort() &&
+      cellText(row.getCell(0)) == "totranslate" && cellText(row.getCell(1)) == "translated"
 
   private fun isGenericHeader(row: List<String>): Boolean =
     row[0].equals("totranslate", true) && row[1].equals("translated", true) ||
@@ -184,7 +198,7 @@ class PO(private val sourceRoot: Path) {
 
   private fun decode(value: String): String = String(Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8)
   private fun sha256(value: String): String = MessageDigest.getInstance("SHA-256")
-    .digest(value.toByteArray(StandardCharsets.UTF_8)).joinToString("") { "%02x".format(it) }
+    .digest(value.toByteArray(StandardCharsets.UTF_8)).joinToString("") { "%02x".format(it.toInt() and 0xff) }
 
   private data class Identity(val context: String?, val msgid: String)
   private data class Entry(
